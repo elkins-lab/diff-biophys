@@ -1,4 +1,5 @@
 site_name: DiffBiophys
+site_url: https://elkins.github.io/diff-biophys/
 site_description: Differentiable biophysical modeling in JAX
 site_author: George Elkins
 
