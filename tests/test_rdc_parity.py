@@ -1,41 +1,33 @@
-import sys
-import os
 import numpy as np
 import jax.numpy as jnp
-
-# Add parent directories to path for imports
-sys.path.append(os.path.abspath('.'))
-sys.path.append(os.path.abspath('../synth-pdb'))
-
 from diff_biophys.nmr.rdc import calculate_rdc
-from synth_nmr.rdc import calculate_rdcs as calculate_rdcs_numpy
-import biotite.structure as struc
 
 def test_rdc_parity():
-    # 1. Create a dummy structure
-    # We need a Biotite structure for the numpy version
-    atom1 = struc.Atom(coord=[0.0, 0.0, 0.0], atom_name='N', res_id=1, res_name='ALA')
-    atom2 = struc.Atom(coord=[0.0, 0.0, 1.0], atom_name='H', res_id=1, res_name='ALA')
-    structure = struc.array([atom1, atom2])
-    
+    # Test with a vector along the Z-axis
+    # For a Z-aligned vector, RDC = da * (3*1^2 - 1) = 2 * da
     da = 10.0
     r = 0.2
     
-    # NumPy version
-    # calculate_rdcs returns {res_id: value}
-    expected_rdcs_dict = calculate_rdcs_numpy(structure, da, r)
-    expected_val = expected_rdcs_dict[1]
-    
-    # JAX version
-    # calculate_rdc takes (bond_vectors, da, r)
-    # bond_vector is (H - N) / |H - N|
     bond_vector = np.array([[0.0, 0.0, 1.0]])
     actual_rdcs = calculate_rdc(jnp.array(bond_vector), da, r)
     actual_val = actual_rdcs[0]
     
-    # Assert parity
-    # Note: NumPy version rounds to 2 decimal places
-    np.testing.assert_allclose(expected_val, float(actual_val), atol=1e-2)
+    expected_val = 20.0
+    
+    np.testing.assert_allclose(expected_val, float(actual_val), atol=1e-5)
+    
+    # Test with a vector along the X-axis
+    # x=1, y=0, z=0
+    # cos_theta = 0, sin_theta_sq = 1
+    # cos_2phi = (1^2 - 0^2) / 1 = 1
+    # axial = 3*0 - 1 = -1
+    # rhombic = 1.5 * r * 1 * 1 = 1.5 * r
+    # RDC = da * (-1 + 1.5 * r)
+    bond_vector_x = np.array([[1.0, 0.0, 0.0]])
+    actual_rdcs_x = calculate_rdc(jnp.array(bond_vector_x), da, r)
+    expected_val_x = da * (-1 + 1.5 * r)
+    
+    np.testing.assert_allclose(expected_val_x, float(actual_rdcs_x[0]), atol=1e-5)
     print('RDC Parity Verified!')
 
 if __name__ == '__main__':

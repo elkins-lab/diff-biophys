@@ -1,15 +1,7 @@
-import sys
-import os
 import numpy as np
 import jax.numpy as jnp
 import jax
-
-# Add parent directories to path for imports
-sys.path.append(os.path.abspath('.'))
-sys.path.append(os.path.abspath('../synth-pdb'))
-
 from diff_biophys.saxs.kernels import debye_saxs
-from synth_pdb.saxs import get_form_factor
 
 def test_saxs_parity_and_gradients():
     print('Testing SAXS Kernel Parity and Gradients...')
@@ -25,18 +17,18 @@ def test_saxs_parity_and_gradients():
     # 2. Define q values
     q_values = np.linspace(0.01, 0.5, 10).astype(np.float32)
     
-    # 3. Form factors
-    f_c = get_form_factor('C', q_values)
-    form_factors = np.tile(f_c, (len(coords), 1))
+    # 3. Form factors (Assume constant 1.0 for testing parity)
+    form_factors = np.ones((len(coords), len(q_values)), dtype=np.float32)
     
     # 4. Run NumPy version (Manual reference)
     dist = np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :])**2, axis=-1))
     expected_intensities = []
-    for qi, fi in zip(q_values, form_factors.T):
-        f_prod = fi[:, None] * fi[None, :]
+    for qi in q_values:
+        f_prod = np.ones((len(coords), len(coords)))
         qr = qi * dist
-        # Standard NumPy sinc implementation
-        sinc_qr = np.sinc(qr / np.pi) 
+        # Standard NumPy sinc implementation: sin(x)/x
+        # Note: np.sinc(x) is sin(pi*x)/(pi*x)
+        sinc_qr = np.where(qr < 1e-4, 1.0 - (qr**2) / 6.0, np.sin(qr) / qr)
         expected_intensities.append(np.sum(f_prod * sinc_qr))
     expected_intensities = np.array(expected_intensities)
     
