@@ -66,6 +66,23 @@ def fit_saupe_tensor(bond_vectors: jnp.ndarray, experimental_rdcs: jnp.ndarray, 
     return tensor
 
 @jit
+def calculate_q_factor(calculated_rdcs: jnp.ndarray, experimental_rdcs: jnp.ndarray) -> jnp.ndarray:
+    """
+    Calculate the RDC Q-factor (Cornilescu et al., 1998).
+    Q = sqrt( sum((D_calc - D_exp)^2) / sum(D_exp^2) )
+    
+    Args:
+        calculated_rdcs: (N,) calculated couplings.
+        experimental_rdcs: (N,) measured couplings.
+        
+    Returns:
+        jnp.ndarray: Scalar Q-factor.
+    """
+    diff_sq = jnp.sum((calculated_rdcs - experimental_rdcs)**2)
+    exp_sq = jnp.sum(experimental_rdcs**2)
+    return jnp.sqrt(diff_sq / (exp_sq + 1e-10))
+
+@jit
 def calculate_rdc(bond_vectors: jnp.ndarray, da: float, r: float) -> jnp.ndarray:
     """
     Differentiable RDC calculation in the principal frame.
