@@ -20,7 +20,7 @@ def position_atom_3d(p1: jnp.ndarray, p2: jnp.ndarray, p3: jnp.ndarray,
     p4 = p3 + bond_length * (
         -jnp.cos(bond_angle_rad) * u2 
         - jnp.sin(bond_angle_rad) * jnp.cos(dihedral_angle_rad) * m 
-        + jnp.sin(bond_angle_rad) * jnp.sin(dihedral_angle_rad) * n
+        - jnp.sin(bond_angle_rad) * jnp.sin(dihedral_angle_rad) * n
     )
     return p4
 

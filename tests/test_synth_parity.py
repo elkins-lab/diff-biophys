@@ -4,7 +4,11 @@ import synth_pdb.geometry.nerf as synth_nerf
 import synth_pdb.geometry.superposition as synth_sup
 import synth_nmr.rdc as synth_rdc
 import synth_nmr.j_coupling as synth_j
-from diff_biophys.geometry import position_atom_3d, kabsch_alignment
+import synth_pdb.geometry as synth_geom
+from diff_biophys.geometry import (
+    position_atom_3d, kabsch_alignment, compute_bond_lengths, 
+    compute_bond_angles, compute_dihedrals
+)
 from diff_biophys.nmr import calculate_rdc, calculate_karplus_j
 
 def test_nerf_synth_parity():
@@ -45,6 +49,26 @@ def test_kabsch_synth_parity():
     np.testing.assert_allclose(R_expected, np.array(R_actual), atol=1e-5)
     np.testing.assert_allclose(t_expected, np.array(t_actual), atol=1e-5)
     print("✅ Kabsch Synth-PDB Parity Verified!")
+
+def test_torsion_synth_parity():
+    """Verify parity with synth-pdb's torsion implementations."""
+    coords = np.random.randn(10, 3)
+    
+    # 1. Bond Lengths
+    expected_lengths = np.sqrt(np.sum(np.diff(coords, axis=0)**2, axis=1))
+    actual_lengths = compute_bond_lengths(jnp.array(coords))
+    np.testing.assert_allclose(expected_lengths, np.array(actual_lengths), atol=1e-5)
+    
+    # 2. Dihedrals
+    # synth-pdb uses degrees, we use radians
+    for i in range(len(coords) - 3):
+        p1, p2, p3, p4 = coords[i:i+4]
+        expected_deg = synth_geom.calculate_dihedral(p1, p2, p3, p4)
+        # Our compute_dihedrals takes a full chain
+        actual_rad = compute_dihedrals(jnp.array(coords))
+        np.testing.assert_allclose(np.deg2rad(expected_deg), float(actual_rad[i]), atol=1e-5)
+        
+    print("✅ Torsion Synth-PDB Parity Verified!")
 
 def test_rdc_synth_parity():
     """Verify parity with synth-nmr's RDC implementation."""
@@ -95,5 +119,6 @@ def test_karplus_synth_parity():
 if __name__ == "__main__":
     test_nerf_synth_parity()
     test_kabsch_synth_parity()
+    test_torsion_synth_parity()
     test_rdc_synth_parity()
     test_karplus_synth_parity()

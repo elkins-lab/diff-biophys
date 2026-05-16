@@ -27,26 +27,26 @@ def compute_bond_angles(coords: jnp.ndarray) -> jnp.ndarray:
 def compute_dihedrals(coords: jnp.ndarray) -> jnp.ndarray:
     """
     Compute dihedral angles (in radians) for four adjacent atoms.
-    Follows the IUPAC convention (0 is cis, 180 is trans).
+    Follows the IUPAC convention and matches synth-pdb.
+    Uses the robust Praxeolitic formula.
     """
-    b0 = coords[1:-2] - coords[:-3]
+    # Vectors: p1-p2, p3-p2, p4-p3
+    b0 = coords[:-3] - coords[1:-2]
     b1 = coords[2:-1] - coords[1:-2]
     b2 = coords[3:] - coords[2:-1]
     
-    n1 = jnp.cross(b0, b1)
-    n2 = jnp.cross(b1, b2)
+    # Normalize b1
+    b1_norm = jnp.linalg.norm(b1, axis=-1, keepdims=True)
+    u1 = b1 / (b1_norm + 1e-10)
     
-    # Normalize normals
-    n1 /= (jnp.linalg.norm(n1, axis=-1, keepdims=True) + 1e-10)
-    n2 /= (jnp.linalg.norm(n2, axis=-1, keepdims=True) + 1e-10)
+    # v = orthogonal component of b0 with respect to b1
+    v = b0 - jnp.sum(b0 * u1, axis=-1, keepdims=True) * u1
+    # w = orthogonal component of b2 with respect to b1
+    w = b2 - jnp.sum(b2 * u1, axis=-1, keepdims=True) * u1
     
-    # Unit vector along b1
-    u1 = b1 / (jnp.linalg.norm(b1, axis=-1, keepdims=True) + 1e-10)
-    
-    # m is perpendicular to n1 and u1
-    m1 = jnp.cross(n1, u1)
-    
-    x = jnp.sum(n1 * n2, axis=-1)
-    y = jnp.sum(m1 * n2, axis=-1)
+    # x = dot product of v and w
+    x = jnp.sum(v * w, axis=-1)
+    # y = dot product of cross(u1, v) and w
+    y = jnp.sum(jnp.cross(u1, v) * w, axis=-1)
     
     return jnp.atan2(y, x)
