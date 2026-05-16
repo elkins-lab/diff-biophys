@@ -19,5 +19,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "ipython",
+    "synth-pdb",
+    "synth-nmr",
 ]
 
