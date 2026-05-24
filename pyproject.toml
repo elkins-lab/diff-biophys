@@ -8,7 +8,7 @@ exclude = ["site*"]
 
 [project]
 name = "diff-biophys"
-version = "0.1.0"
+version = "0.1.1"
 description = "Differentiable biophysical modeling in JAX"
 authors = [{name = "George Elkins"}]
 dependencies = [
