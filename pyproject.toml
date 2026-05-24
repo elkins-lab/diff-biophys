@@ -2,6 +2,10 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["diff_biophys*"]
+exclude = ["site*"]
+
 [project]
 name = "diff-biophys"
 version = "0.1.0"
