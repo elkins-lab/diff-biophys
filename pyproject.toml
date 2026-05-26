@@ -8,7 +8,7 @@ exclude = ["site*"]
 
 [project]
 name = "diff-biophys"
-version = "0.1.1"
+version = "0.1.2"
 description = "Differentiable biophysical modeling in JAX"
 readme = "README.md"
 license = {text = "MIT"}
