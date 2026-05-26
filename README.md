@@ -1,5 +1,12 @@
 # 🧬 DiffBiophys: Differentiable Biophysics for the AI Era
 
+[![Tests](https://github.com/elkins/diff-biophys/actions/workflows/test.yml/badge.svg)](https://github.com/elkins/diff-biophys/actions/workflows/test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/diff-biophys.svg)](https://pypi.org/project/diff-biophys/)
+[![Python 3.10+](https://img.shields.io/pypi/pyversions/diff-biophys.svg)](https://pypi.org/project/diff-biophys/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/elkins/diff-biophys/branch/main/graph/badge.svg)](https://codecov.io/gh/elkins/diff-biophys)
+[![JAX](https://img.shields.io/badge/backend-JAX-9cf.svg)](https://github.com/google/jax)
+
 **DiffBiophys** is a high-performance Python library for differentiable biophysical modeling. Built on **JAX**, it re-implements core structural biology and spectroscopy observables (SAXS, NMR, CD) as hardware-accelerated, auto-differentiable kernels.
 
 **[Documentation Website](https://elkins.github.io/diff-biophys/)** | **[Use Cases](https://elkins.github.io/diff-biophys/use_cases/)**
@@ -24,26 +31,28 @@ To bridge the gap between static structural models and experimental solution-sta
 
 ### 2. `diff_biophys.saxs` (Differentiable Scattering)
 - **Debye Formula:** $O(N^2)$ inter-atomic interference summation.
-- **Hardware Acceleration:** GPU-optimized pairwise distance kernels.
-- **Use Case:** Fitting structure "compactness" and "radius of gyration" to solution-state X-ray scattering curves.
+- **Hydration Shell Correction:** Excluded-volume solvent subtraction (Fraser et al. 1978).
+- **Hardware Acceleration:** GPU-optimized pairwise distance kernels via JAX `vmap`.
+- **Use Case:** Fitting structure compactness and radius of gyration to solution-state X-ray scattering curves.
 
 ### 3. `diff_biophys.nmr` (Differentiable Spectroscopy)
-- **Residual Dipolar Couplings (RDCs):** Differentiable Saupe tensor alignment and coupling calculation.
-- **Chemical Shifts:** Differentiable Ring-Current (Johnson-Bovey) shielding and Karplus J-coupling kernels.
+- **Residual Dipolar Couplings (RDCs):** Differentiable Saupe tensor alignment and coupling calculation. Includes SVD-based tensor fitting.
+- **Chemical Shifts:** Differentiable ring-current (Johnson-Bovey) shielding and softmax-weighted secondary structure Cα shift predictor.
+- **Karplus J-coupling:** Parameterizable 3J coupling equation (Vuister & Bax 1993 defaults).
 - **Use Case:** Refining side-chain packing and domain orientations against high-resolution NMR data.
 
 ### 4. `diff_biophys.cd` (Differentiable Dichroism)
-- **Matrix-Method Simulation:** Differentiable simulation of peptide bond transition dipole coupling.
-- **Use Case:** Predicting secondary structure content and verifying fold stability.
+- **Matrix-Method Simulation (planned):** Differentiable simulation of peptide bond transition dipole coupling via DeVoe theory.
+- **Status:** ⚠️ Not yet implemented — raises `NotImplementedError`.
 
 ---
 
 ## ⚡ Technical Architecture
 
-- **Backend:** JAX (XLA-compiled).
+- **Backend:** JAX (XLA-compiled) — supports CPU, GPU, and TPU.
 - **Parallelism:** Native support for `vmap` (vectorization across ensembles/trajectories) and `pmap` (multi-device execution).
-- **Differentiability:** Support for both Forward and Reverse-mode autodiff.
-- **Interoperability:** Seamless integration with PyTorch/TensorFlow (via DLPack) and standard structural formats (mmCIF/BCIF).
+- **Differentiability:** Forward and reverse-mode autodiff through all kernels.
+- **Interoperability:** JAX arrays are compatible with NumPy and can be exchanged with PyTorch via `dlpack` (user-managed conversion).
 
 ---
 
@@ -51,32 +60,33 @@ To bridge the gap between static structural models and experimental solution-sta
 
 ### Phase 1: Foundations (Alpha)
 - [x] Differentiable NeRF and Kabsch alignment.
-- [x] GPU-accelerated Debye formula for SAXS.
+- [x] GPU-accelerated Debye formula for SAXS with hydration shell correction.
 - [x] Unit tests verifying parity with `synth-pdb` NumPy implementations.
 
 ### Phase 2: NMR & Spectroscopy (Beta)
 - [x] Differentiable RDC and Karplus kernels.
 - [x] Differentiable Johnson-Bovey ring current model.
-- [ ] Integration with `synth-nmr` parameter libraries.
+- [x] Integration with `synth-nmr` parameter libraries (optional dependency).
 
 ### Phase 3: Integration & Optimization (v1.0)
 - [ ] Example notebooks for structure refinement via gradient descent.
 - [ ] Plugin for `torch`-based AI models to use biophysical loss functions.
+- [ ] Full CD matrix-method implementation (DeVoe theory).
 - [ ] Full support for BinaryCIF streaming.
 
 ---
 
-## 📂 Repository Structure (Proposed)
+## 📂 Repository Structure
 
 ```text
 diff-biophys/
 ├── diff_biophys/          # Core package
 │   ├── geometry/          # NeRF, Kabsch, Torsions
 │   ├── saxs/              # Debye kernels, form factors
-│   ├── nmr/               # RDCs, Karplus, Ring Currents
-│   ├── cd/                # CD simulation
-│   └── utils/             # Constants, JAX-NumPy shims
-├── tests/                 # Parity and gradient checks
+│   ├── nmr/               # RDCs, Karplus, Ring Currents, Chemical Shifts
+│   ├── cd/                # CD simulation (planned)
+│   └── ensemble.py        # Ensemble averaging API
+├── tests/                 # Parity, gradient, and scientific validation checks
 ├── examples/              # Jupyter notebooks (Refinement Lab)
 ├── docs/                  # API and Theory
 ├── pyproject.toml         # Modern build config

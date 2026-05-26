@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-# Default NMR parameters (Vuister & Bax 1993)
+# Default NMR parameters (Vuister & Bax 1993, J. Am. Chem. Soc. 115, 7772-7777)
 KARPLUS_A = 6.51
 KARPLUS_B = -1.76
 KARPLUS_C = 1.60
@@ -26,5 +26,8 @@ try:
     KARPLUS_C = sj.KARPLUS_PARAMS.get('C', KARPLUS_C)
     
     RING_INTENSITIES.update(sc.RING_INTENSITIES)
-except ImportError:
+except (ImportError, AttributeError, KeyError):
+    # ImportError  : synth-nmr is not installed (expected in many environments)
+    # AttributeError: synth-nmr exists but lacks the expected module attributes
+    # KeyError      : KARPLUS_PARAMS dict is missing expected keys
     pass

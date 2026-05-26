@@ -1,21 +1,32 @@
 import jax.numpy as jnp
 from jax import jit
 
+
 def simulate_cd_matrix(peptide_positions, dipole_orientations, wavelengths):
     """
-    Placeholder for Matrix-Method CD Simulation (DeVoe Theory).
-    
+    Matrix-Method CD Simulation (DeVoe Theory).
+
+    .. warning::
+        **NOT IMPLEMENTED.** This function currently raises
+        ``NotImplementedError``.  A full implementation would require:
+
+        1. Building the interaction matrix V_ij of dipole–dipole coupling
+           energies between amide chromophores.
+        2. Computing the frequency-dependent polarizability tensor for each
+           chromophore.
+        3. Solving the coupled-oscillator equations for the complex optical
+           response and converting to molar ellipticity [θ].
+
     Args:
-        peptide_positions: (N, 3) positions of amide chromophores
-        dipole_orientations: (N, 3) unit vectors for transition dipoles
-        wavelengths: (M,) wavelengths in nm
+        peptide_positions: (N, 3) positions of amide chromophores.
+        dipole_orientations: (N, 3) unit vectors for transition dipoles.
+        wavelengths: (M,) wavelengths in nm.
+
+    Raises:
+        NotImplementedError: Always, until this module is implemented.
     """
-    # 1. Interaction Matrix (N, N)
-    # V_ij = dipole-dipole coupling energy
-    
-    # 2. Polarizability Tensor
-    
-    # 3. Solve for complex ellipticity
-    
-    # Simple mockup for now (weighted basis-like)
-    return jnp.zeros_like(wavelengths)
+    raise NotImplementedError(
+        "diff_biophys.cd.simulate_cd_matrix is not yet implemented. "
+        "Contributions welcome — see the DeVoe (1964) matrix method as a "
+        "starting point."
+    )

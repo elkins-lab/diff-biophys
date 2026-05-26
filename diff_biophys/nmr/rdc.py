@@ -71,6 +71,8 @@ def calculate_q_factor(calculated_rdcs: jnp.ndarray, experimental_rdcs: jnp.ndar
     Calculate the RDC Q-factor (Cornilescu et al., 1998).
     Q = sqrt( sum((D_calc - D_exp)^2) / sum(D_exp^2) )
     
+    Returns 0.0 when all experimental RDCs are zero (perfect trivial match).
+    
     Args:
         calculated_rdcs: (N,) calculated couplings.
         experimental_rdcs: (N,) measured couplings.
@@ -80,17 +82,37 @@ def calculate_q_factor(calculated_rdcs: jnp.ndarray, experimental_rdcs: jnp.ndar
     """
     diff_sq = jnp.sum((calculated_rdcs - experimental_rdcs)**2)
     exp_sq = jnp.sum(experimental_rdcs**2)
-    return jnp.sqrt(diff_sq / (exp_sq + 1e-10))
+    # Use jnp.where so Q is exactly 0 when calc == exp, and well-defined
+    # when experimental_rdcs is identically zero (trivial perfect match).
+    return jnp.where(exp_sq > 0.0, jnp.sqrt(diff_sq / exp_sq), 0.0)
 
 @jit
 def calculate_rdc(bond_vectors: jnp.ndarray, da: float, r: float) -> jnp.ndarray:
     """
-    Differentiable RDC calculation in the principal frame.
-    
+    Differentiable RDC calculation in the principal axis frame (PAF).
+
+    .. important::
+        ``bond_vectors`` **must be expressed in the principal axis frame**
+        of the alignment tensor, i.e. the frame where the Saupe tensor is
+        diagonal.  Passing lab-frame vectors will give incorrect results
+        without any error.
+
+    The formula used is the standard Clore/Bax convention
+    (Clore et al. 1998, *J. Magn. Reson.* **133**, 216–221)::
+
+        D = Da · [(3 cos²θ − 1) + (3/2) R sin²θ cos 2φ]
+          = Da · [(3z² − 1) + (3/2) R (x² − y²)]
+
+    where ``Da`` is the axial component and ``R = (Axx − Ayy) / Azz`` is
+    the rhombicity (0 ≤ R ≤ 2/3).
+
     Args:
-        bond_vectors: (N, 3) unit vectors in the tensor's principal frame
-        da: Axial component in Hz
-        r: Rhombicity (0 <= R <= 2/3)
+        bond_vectors: (N, 3) unit vectors in the tensor's principal axis frame.
+        da: Axial component Da in Hz.
+        r: Rhombicity R (0 ≤ R ≤ 2/3).
+
+    Returns:
+        jnp.ndarray: (N,) Calculated RDCs in Hz.
     """
     x, y, z = bond_vectors[:, 0], bond_vectors[:, 1], bond_vectors[:, 2]
     
