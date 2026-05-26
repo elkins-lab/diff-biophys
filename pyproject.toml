@@ -10,13 +10,31 @@ exclude = ["site*"]
 name = "diff-biophys"
 version = "0.1.1"
 description = "Differentiable biophysical modeling in JAX"
+readme = "README.md"
+license = {text = "MIT"}
 authors = [{name = "George Elkins"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
 dependencies = [
     "jax",
     "jaxlib",
     "numpy",
     "biotite",
 ]
+
+[project.urls]
+Homepage = "https://github.com/elkins/diff-biophys"
+Repository = "https://github.com/elkins/diff-biophys"
+Documentation = "https://elkins.github.io/diff-biophys/"
 
 [project.optional-dependencies]
 dev = [
