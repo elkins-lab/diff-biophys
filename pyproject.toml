@@ -22,8 +22,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "jax",
-    "jaxlib",
+    "jax<0.4.31",
+    "jaxlib<0.4.31",
     "numpy<2.0.0",
 ]
 
