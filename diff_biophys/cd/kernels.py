@@ -1,7 +1,3 @@
-import jax.numpy as jnp
-from jax import jit
-
-
 def simulate_cd_matrix(peptide_positions, dipole_orientations, wavelengths):
     """
     Matrix-Method CD Simulation (DeVoe Theory).

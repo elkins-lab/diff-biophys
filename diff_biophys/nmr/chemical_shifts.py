@@ -1,13 +1,29 @@
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import jit
 
 # Baseline Random Coil Shifts (Wishart et al. 1995, J. Biomol. NMR 5, 67–81)
 # Cα chemical shifts in ppm (referenced to DSS)
 RANDOM_COIL_CA = {
-    "ALA": 52.5, "ARG": 56.0, "ASN": 53.1, "ASP": 54.2, "CYS": 58.2,
-    "GLN": 55.7, "GLU": 56.6, "GLY": 45.1, "HIS": 55.0, "ILE": 61.1,
-    "LEU": 55.1, "LYS": 56.2, "MET": 55.3, "PHE": 57.7, "PRO": 63.3,
-    "SER": 58.3, "THR": 61.8, "TRP": 57.5, "TYR": 57.9, "VAL": 62.2
+    "ALA": 52.5,
+    "ARG": 56.0,
+    "ASN": 53.1,
+    "ASP": 54.2,
+    "CYS": 58.2,
+    "GLN": 55.7,
+    "GLU": 56.6,
+    "GLY": 45.1,
+    "HIS": 55.0,
+    "ILE": 61.1,
+    "LEU": 55.1,
+    "LYS": 56.2,
+    "MET": 55.3,
+    "PHE": 57.7,
+    "PRO": 63.3,
+    "SER": 58.3,
+    "THR": 61.8,
+    "TRP": 57.5,
+    "TYR": 57.9,
+    "VAL": 62.2,
 }
 
 # Statistical Secondary Structure Offsets for Cα (SPARTA / SPARTA+ convention)
@@ -19,6 +35,7 @@ OFFSET_SHEET = -1.5
 # This controls the "softness" of the helix/sheet classification.
 # At σ²=0.5, a residue 0.7 rad (~40°) from the helix center gets ~37% weight.
 _SS_SIGMA_SQ = 0.5
+
 
 @jit
 def predict_ca_shifts(phi: jnp.ndarray, psi: jnp.ndarray, rc_shifts: jnp.ndarray) -> jnp.ndarray:
@@ -45,11 +62,11 @@ def predict_ca_shifts(phi: jnp.ndarray, psi: jnp.ndarray, rc_shifts: jnp.ndarray
     """
     # --- Unnormalised Gaussian affinities ---
     # Alpha-helix centre: Φ ~ −60°, Ψ ~ −45°
-    helix_dist_sq = (phi + 1.05)**2 + (psi + 0.78)**2
+    helix_dist_sq = (phi + 1.05) ** 2 + (psi + 0.78) ** 2
     w_helix_raw = jnp.exp(-helix_dist_sq / _SS_SIGMA_SQ)
 
     # Beta-sheet centre: Φ ~ −120°, Ψ ~ +135°
-    sheet_dist_sq = (phi + 2.09)**2 + (psi - 2.35)**2
+    sheet_dist_sq = (phi + 2.09) ** 2 + (psi - 2.35) ** 2
     w_sheet_raw = jnp.exp(-sheet_dist_sq / _SS_SIGMA_SQ)
 
     # Coil baseline: all residues start with weight 1 (i.e. the neutral state)

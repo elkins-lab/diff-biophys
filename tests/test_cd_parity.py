@@ -1,6 +1,7 @@
-import pytest
-from diff_biophys.cd.kernels import simulate_cd_matrix
 import jax.numpy as jnp
+import pytest
+
+from diff_biophys.cd.kernels import simulate_cd_matrix
 
 
 def test_cd_not_implemented():

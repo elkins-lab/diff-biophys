@@ -1,8 +1,7 @@
-import numpy as np
 import jax.numpy as jnp
-import pytest
-from diff_biophys.nmr import calculate_karplus_j
+import numpy as np
 
+from diff_biophys.nmr import calculate_karplus_j
 
 # Parameters from Vuister & Bax (1993), JACS 115, 7772-7777
 A, B, C = 6.51, -1.76, 1.60
@@ -42,18 +41,17 @@ def test_karplus_b_parameter_sign():
 
     A sign error in B would swap these values.
     """
-    j_0   = float(calculate_karplus_j(jnp.array(0.0),     A, B, C))
-    j_180 = float(calculate_karplus_j(jnp.array(jnp.pi),  A, B, C))
+    j_0 = float(calculate_karplus_j(jnp.array(0.0), A, B, C))
+    j_180 = float(calculate_karplus_j(jnp.array(jnp.pi), A, B, C))
 
-    np.testing.assert_allclose(j_0,   6.35, atol=0.01,
-                               err_msg="J(0°) mismatch — B sign may be wrong")
-    np.testing.assert_allclose(j_180, 9.87, atol=0.01,
-                               err_msg="J(180°) mismatch — B sign may be wrong")
+    np.testing.assert_allclose(j_0, 6.35, atol=0.01, err_msg="J(0°) mismatch — B sign may be wrong")
+    np.testing.assert_allclose(
+        j_180, 9.87, atol=0.01, err_msg="J(180°) mismatch — B sign may be wrong"
+    )
 
     # J(θ=90°) = C only (cos²=0, cos=0)
     j_90 = float(calculate_karplus_j(jnp.array(jnp.pi / 2), A, B, C))
-    np.testing.assert_allclose(j_90, C, atol=1e-5,
-                               err_msg="J(90°) should equal C")
+    np.testing.assert_allclose(j_90, C, atol=1e-5, err_msg="J(90°) should equal C")
 
     # With a negative B, J(180°) must be larger than J(0°)
     assert j_180 > j_0, "With B<0, J(180°) should exceed J(0°)"

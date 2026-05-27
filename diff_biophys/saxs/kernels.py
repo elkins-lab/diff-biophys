@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import vmap
 
 # Atomic volumes (A^3) from Pavlov & Svergun (1997)
 VOLUMES = {
@@ -12,11 +12,13 @@ VOLUMES = {
 }
 
 
-def debye_saxs(coords: jnp.ndarray,
-               q_values: jnp.ndarray,
-               form_factors: jnp.ndarray,
-               volumes: jnp.ndarray = None,
-               solvent_density: float = 0.334) -> jnp.ndarray:
+def debye_saxs(
+    coords: jnp.ndarray,
+    q_values: jnp.ndarray,
+    form_factors: jnp.ndarray,
+    volumes: jnp.ndarray = None,
+    solvent_density: float = 0.334,
+) -> jnp.ndarray:
     """
     Differentiable Debye Formula in JAX with optional solvent subtraction.
 
@@ -55,7 +57,7 @@ def debye_saxs(coords: jnp.ndarray,
 
         # Gaussian decay for the excluded-volume envelope (Fraser et al. 1978)
         # f_eff(q) = f_vac(q) - ρ_sol · V · exp(−(q·r_eff)² / (4π))
-        decay = jnp.exp(-(q_values[None, :] * r_eff[:, None]) ** 2 / (4.0 * jnp.pi))
+        decay = jnp.exp(-((q_values[None, :] * r_eff[:, None]) ** 2) / (4.0 * jnp.pi))
         f_eff = form_factors - (solvent_density * volumes[:, None] * decay)
 
     # 3. Debye sum: I(q) = Σ_i Σ_j f_i(q) f_j(q) sinc(q r_ij)
@@ -69,7 +71,7 @@ def debye_saxs(coords: jnp.ndarray,
         # avoid introducing a phase error at large qr.
         sinc_qr = jnp.where(
             qr < 1e-4,
-            1.0 - (qr ** 2) / 6.0,
+            1.0 - (qr**2) / 6.0,
             jnp.sin(qr) / (qr + 1e-10),
         )
         return jnp.sum(f_prod * sinc_qr)

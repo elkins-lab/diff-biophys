@@ -2,15 +2,12 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-include = ["diff_biophys*"]
-exclude = ["site*"]
-
 [project]
 name = "diff-biophys"
 version = "0.1.2"
 description = "Differentiable biophysical modeling in JAX"
 readme = "README.md"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "George Elkins"}]
 classifiers = [
@@ -24,6 +21,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Physics",
 ]
+
 dependencies = [
     "jax",
     "jaxlib",
@@ -38,10 +36,103 @@ Documentation = "https://elkins.github.io/diff-biophys/"
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
-    "pytest-cov",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.6.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.0.0",
     "ipython",
     "synth-pdb",
     "synth-nmr",
 ]
 
+[tool.setuptools.packages.find]
+include = ["diff_biophys*"]
+exclude = ["site*"]
+
+# ── Test runner ───────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# ── Linter & formatter ────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+exclude = ["examples/*.ipynb"]  # notebook has known JSON corruption
+target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line length handled by formatter
+    "N806",  # uppercase variables in functions (scientific constants: Da, R, S2)
+    "N803",  # uppercase arguments (common in biophysics)
+    "N802",  # uppercase function names (physics convention)
+    "B017",  # asserting on Exception (acceptable in generic error tests)
+    "B904",  # raise from (not yet fixed project-wide)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # re-exports are intentional
+"tests/*" = ["N", "B"]   # naming/bugbear not enforced in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["diff_biophys"]
+
+# ── Type checker ──────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+strict_equality = true
+exclude = ["build/", "dist/", "scratch/", "site/"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "scripts.*", "examples.*"]
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "jax.*",
+    "jaxlib.*",
+    "numpy.*",
+    "biotite.*",
+    "synth_pdb.*",
+    "synth_nmr.*",
+]
+ignore_missing_imports = true
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+[tool.coverage.run]
+source = ["."]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

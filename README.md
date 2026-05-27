@@ -6,6 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/elkins/diff-biophys/branch/main/graph/badge.svg)](https://codecov.io/gh/elkins/diff-biophys)
 [![JAX](https://img.shields.io/badge/backend-JAX-9cf.svg)](https://github.com/google/jax)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 
 **DiffBiophys** is a high-performance Python library for differentiable biophysical modeling. Built on **JAX**, it re-implements core structural biology and spectroscopy observables (SAXS, NMR, CD) as hardware-accelerated, auto-differentiable kernels.
 
@@ -91,4 +93,46 @@ diff-biophys/
 ├── docs/                  # API and Theory
 ├── pyproject.toml         # Modern build config
 └── README.md
+```
+
+## 🚀 Installation
+
+```bash
+pip install diff-biophys
+```
+
+For GPU support (CUDA):
+```bash
+pip install "jax[cuda12]" diff-biophys
+```
+
+## 🤝 Contributing
+
+Contributions are welcome from both ML and structural biology communities! Please open an issue or pull request on [GitHub](https://github.com/elkins/diff-biophys). Run `pre-commit run --all-files` before submitting.
+
+## 🔗 Related Projects
+
+diff-biophys is the **differentiable engine** powering the higher-level tools in this ecosystem:
+
+- [synth-pdb](https://github.com/elkins/synth-pdb) — Synthetic structure generation (uses NumPy implementations)
+- [synth-nmr](https://github.com/elkins/synth-nmr) — NMR observables (optional dependency)
+- [synth-saxs](https://github.com/elkins/synth-saxs) — SAXS profile simulator
+- [diff-ensemble](https://github.com/elkins/diff-ensemble) — IDP ensemble VAE (depends on diff-biophys)
+- [TorsionTuner](https://github.com/elkins/TorsionTuner) — GNN refinement (depends on diff-biophys)
+- [resonance-flow](https://github.com/elkins/resonance-flow) — NMR-guided folding (depends on diff-biophys)
+
+## ⚖️ License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+## 📖 Citation
+
+```bibtex
+@software{diff_biophys,
+  author  = {Elkins, George},
+  title   = {diff-biophys: Differentiable biophysics kernels for JAX},
+  year    = {2024},
+  url     = {https://github.com/elkins/diff-biophys},
+  version = {0.1.2}
+}
 ```

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from diff_biophys.nmr.chemical_shifts import RANDOM_COIL_CA
 
+from diff_biophys.nmr.chemical_shifts import RANDOM_COIL_CA
 
 # Published Cα random coil shifts (ppm) from:
 # Wishart et al. (1995) J. Biomol. NMR 5, 67–81, Table 1
@@ -44,8 +44,10 @@ def test_random_coil_wishart_1995(aa, expected):
     """
     actual = RANDOM_COIL_CA[aa]
     np.testing.assert_allclose(
-        actual, expected, atol=0.05,
-        err_msg=f"{aa}: expected {expected} ppm (Wishart 1995), got {actual} ppm"
+        actual,
+        expected,
+        atol=0.05,
+        err_msg=f"{aa}: expected {expected} ppm (Wishart 1995), got {actual} ppm",
     )
 
 

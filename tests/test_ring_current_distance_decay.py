@@ -1,5 +1,6 @@
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
+
 from diff_biophys.nmr import calculate_ring_current_shift
 
 
@@ -27,9 +28,15 @@ def test_ring_current_inverse_cube_decay():
     assert s2 < 0 and s4 < 0, "Axial points should be in the shielding cone (δ < 0)"
 
     # |s2| / |s4| should equal 2³ = 8
-    np.testing.assert_allclose(abs(s2) / abs(s4), 8.0, rtol=1e-4,
-                               err_msg=f"1/r³ ratio: got {abs(s2)/abs(s4):.4f}, expected 8.0")
-    print(f"✅ Ring current 1/r³ decay: δ(r=2)={s2:.4f}, δ(r=4)={s4:.4f}, ratio={abs(s2)/abs(s4):.4f}")
+    np.testing.assert_allclose(
+        abs(s2) / abs(s4),
+        8.0,
+        rtol=1e-4,
+        err_msg=f"1/r³ ratio: got {abs(s2) / abs(s4):.4f}, expected 8.0",
+    )
+    print(
+        f"✅ Ring current 1/r³ decay: δ(r=2)={s2:.4f}, δ(r=4)={s4:.4f}, ratio={abs(s2) / abs(s4):.4f}"
+    )
 
 
 def test_ring_current_equatorial_decay():
@@ -50,9 +57,13 @@ def test_ring_current_equatorial_decay():
 
     assert s2 > 0 and s4 > 0, "Equatorial points should be in the deshielding region (δ > 0)"
 
-    np.testing.assert_allclose(s2 / s4, 8.0, rtol=1e-4,
-                               err_msg=f"1/r³ ratio in equatorial plane: got {s2/s4:.4f}, expected 8.0")
-    print(f"✅ Equatorial 1/r³ decay: δ(r=2)={s2:.4f}, δ(r=4)={s4:.4f}, ratio={s2/s4:.4f}")
+    np.testing.assert_allclose(
+        s2 / s4,
+        8.0,
+        rtol=1e-4,
+        err_msg=f"1/r³ ratio in equatorial plane: got {s2 / s4:.4f}, expected 8.0",
+    )
+    print(f"✅ Equatorial 1/r³ decay: δ(r=2)={s2:.4f}, δ(r=4)={s4:.4f}, ratio={s2 / s4:.4f}")
 
 
 if __name__ == "__main__":
