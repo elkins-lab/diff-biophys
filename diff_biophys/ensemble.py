@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any, cast
 
 import jax.numpy as jnp
 from jax import jit, vmap
@@ -9,21 +10,28 @@ class Ensemble:
     High-level API for ensemble-averaged biophysical observables.
     """
 
-    def __init__(self, coordinates: jnp.ndarray, weights: jnp.ndarray = None):
+    coords: jnp.ndarray
+    weights: jnp.ndarray
+    m: int
+
+    def __init__(self, coordinates: jnp.ndarray, weights: jnp.ndarray | None = None):
         """
         Args:
             coordinates: (M, N, 3) array where M is ensemble size and N is atom count.
             weights: (M,) array of population weights. Defaults to uniform.
         """
         self.coords = coordinates
-        self.m = coordinates.shape[0]
+        self.m = int(coordinates.shape[0])
         if weights is None:
             self.weights = jnp.full((self.m,), 1.0 / self.m)
         else:
-            self.weights = weights / jnp.sum(weights)
+            self.weights = cast(jnp.ndarray, weights / jnp.sum(weights))
 
     def calculate_average(
-        self, observable_fn: Callable[[jnp.ndarray], jnp.ndarray], *args, **kwargs
+        self,
+        observable_fn: Callable[..., jnp.ndarray],
+        *args: Any,
+        **kwargs: Any,
     ) -> jnp.ndarray:
         """
         Calculate the population-weighted average of an observable.
@@ -40,15 +48,15 @@ class Ensemble:
         ensemble_results = v_fn(self.coords)  # (M, D)
 
         # Weighted average
-        return jnp.sum(ensemble_results * self.weights[:, None], axis=0)
+        return cast(jnp.ndarray, jnp.sum(ensemble_results * self.weights[:, None], axis=0))
 
 
 @jit
 def calculate_ensemble_saxs(
     coords: jnp.ndarray, weights: jnp.ndarray, q_values: jnp.ndarray, form_factors: jnp.ndarray
-):
+) -> jnp.ndarray:
     """Utility for fast ensemble SAXS."""
     from diff_biophys.saxs import debye_saxs
 
     v_saxs = vmap(lambda c: debye_saxs(c, q_values, form_factors))
-    return jnp.sum(v_saxs(coords) * weights[:, None], axis=0)
+    return cast(jnp.ndarray, jnp.sum(v_saxs(coords) * weights[:, None], axis=0))

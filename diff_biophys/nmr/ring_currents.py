@@ -1,3 +1,5 @@
+from typing import cast
+
 import jax.numpy as jnp
 from jax import jit
 
@@ -34,4 +36,4 @@ def calculate_ring_current_shift(
 
     # 4. Johnson-Bovey geometric term
     # delta = intensity * (1 - 3 * cos^2(theta)) / r^3
-    return intensity * (1.0 - 3.0 * cos_theta**2) / (r**3 + 1e-10)
+    return cast(jnp.ndarray, intensity * (1.0 - 3.0 * cos_theta**2) / (r**3 + 1e-10))

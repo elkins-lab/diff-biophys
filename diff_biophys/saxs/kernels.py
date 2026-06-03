@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import jax.numpy as jnp
 from jax import vmap
 
@@ -16,7 +18,7 @@ def debye_saxs(
     coords: jnp.ndarray,
     q_values: jnp.ndarray,
     form_factors: jnp.ndarray,
-    volumes: jnp.ndarray = None,
+    volumes: jnp.ndarray | None = None,
     solvent_density: float = 0.334,
 ) -> jnp.ndarray:
     """
@@ -61,8 +63,9 @@ def debye_saxs(
         f_eff = form_factors - (solvent_density * volumes[:, None] * decay)
 
     # 3. Debye sum: I(q) = Σ_i Σ_j f_i(q) f_j(q) sinc(q r_ij)
-    def compute_intensity(q_idx):
+    def compute_intensity(q_idx: Any) -> Any:
         q = q_values[q_idx]
+
         f_q = f_eff[:, q_idx]
         f_prod = f_q[:, None] * f_q[None, :]
         qr = q * dist
@@ -76,4 +79,4 @@ def debye_saxs(
         )
         return jnp.sum(f_prod * sinc_qr)
 
-    return vmap(compute_intensity)(jnp.arange(len(q_values)))
+    return cast(jnp.ndarray, vmap(compute_intensity)(jnp.arange(len(q_values))))

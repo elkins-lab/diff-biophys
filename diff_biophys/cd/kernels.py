@@ -1,4 +1,13 @@
-def simulate_cd_matrix(peptide_positions, dipole_orientations, wavelengths):
+from typing import NoReturn
+
+import jax.numpy as jnp
+
+
+def simulate_cd_matrix(
+    peptide_positions: jnp.ndarray,
+    dipole_orientations: jnp.ndarray,
+    wavelengths: jnp.ndarray,
+) -> NoReturn:
     """
     Matrix-Method CD Simulation (DeVoe Theory).
 

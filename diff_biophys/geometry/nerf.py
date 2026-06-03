@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import jax.numpy as jnp
 from jax import jit, lax
 
@@ -42,7 +44,7 @@ def position_atom_3d(
         - jnp.sin(bond_angle_rad) * jnp.cos(dihedral_angle_rad) * m
         - jnp.sin(bond_angle_rad) * jnp.sin(dihedral_angle_rad) * n
     )
-    return p4
+    return cast(jnp.ndarray, p4)
 
 
 @jit
@@ -65,8 +67,11 @@ def chain_nerf(
         jnp.ndarray: (N+3, 3) coordinates for the entire chain
     """
 
-    def body_fun(carry, i):
+    def body_fun(
+        carry: tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray], i: Any
+    ) -> tuple[tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray], Any]:
         p1, p2, p3 = carry
+
         p4 = position_atom_3d(p1, p2, p3, bond_lengths[i], bond_angles[i], dihedrals[i])
         return (p2, p3, p4), p4
 
@@ -76,4 +81,4 @@ def chain_nerf(
     init_carry = (init_coords[0], init_coords[1], init_coords[2])
     _, final_coords = lax.scan(body_fun, init_carry, indices)
 
-    return jnp.concatenate([init_coords, final_coords], axis=0)
+    return cast(jnp.ndarray, jnp.concatenate([init_coords, final_coords], axis=0))

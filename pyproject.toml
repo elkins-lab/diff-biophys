@@ -107,19 +107,15 @@ strict_equality = true
 exclude = ["build/", "dist/", "scratch/", "site/"]
 
 [[tool.mypy.overrides]]
-module = ["tests.*", "scripts.*", "examples.*"]
-disallow_untyped_defs = false
-
-[[tool.mypy.overrides]]
 module = [
     "jax.*",
     "jaxlib.*",
     "numpy.*",
-    "biotite.*",
-    "synth_pdb.*",
     "synth_nmr.*",
 ]
 ignore_missing_imports = true
+
+
 
 # ── Coverage ──────────────────────────────────────────────────────────────────
 [tool.coverage.run]
