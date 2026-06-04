@@ -44,8 +44,8 @@ To bridge the gap between static structural models and experimental solution-sta
 - **Use Case:** Refining side-chain packing and domain orientations against high-resolution NMR data.
 
 ### 4. `diff_biophys.cd` (Differentiable Dichroism)
-- **Matrix-Method Simulation (planned):** Differentiable simulation of peptide bond transition dipole coupling via DeVoe theory.
-- **Status:** ⚠️ Not yet implemented — raises `NotImplementedError`.
+- **Matrix-Method Simulation:** Differentiable simulation of peptide bond transition dipole coupling via DeVoe theory.
+- **Status:** ✅ Implemented. Supports frequency-dependent coupled-oscillator response.
 
 ---
 
@@ -71,9 +71,9 @@ To bridge the gap between static structural models and experimental solution-sta
 - [x] Integration with `synth-nmr` parameter libraries (optional dependency).
 
 ### Phase 3: Integration & Optimization (v1.0)
+- [x] Full CD matrix-method implementation (DeVoe theory).
 - [ ] Example notebooks for structure refinement via gradient descent.
 - [ ] Plugin for `torch`-based AI models to use biophysical loss functions.
-- [ ] Full CD matrix-method implementation (DeVoe theory).
 - [ ] Full support for BinaryCIF streaming.
 
 ---
@@ -86,7 +86,7 @@ diff-biophys/
 │   ├── geometry/          # NeRF, Kabsch, Torsions
 │   ├── saxs/              # Debye kernels, form factors
 │   ├── nmr/               # RDCs, Karplus, Ring Currents, Chemical Shifts
-│   ├── cd/                # CD simulation (planned)
+│   ├── cd/                # CD simulation (DeVoe Matrix Method)
 │   └── ensemble.py        # Ensemble averaging API
 ├── tests/                 # Parity, gradient, and scientific validation checks
 ├── examples/              # Jupyter notebooks (Refinement Lab)
@@ -117,6 +117,9 @@ diff-biophys is the **differentiable engine** powering the higher-level tools in
 - [synth-pdb](https://github.com/elkins/synth-pdb) — Synthetic structure generation (uses NumPy implementations)
 - [synth-nmr](https://github.com/elkins/synth-nmr) — NMR observables (optional dependency)
 - [synth-saxs](https://github.com/elkins/synth-saxs) — SAXS profile simulator
+- [diff-fret](https://github.com/elkins/diff-fret) — Differentiable FRET (new)
+- [diff-hdx](https://github.com/elkins/diff-hdx) — Differentiable HDX-MS (new)
+- [diff-epr](https://github.com/elkins/diff-epr) — Differentiable EPR/DEER (new)
 - [diff-ensemble](https://github.com/elkins/diff-ensemble) — IDP ensemble VAE (depends on diff-biophys)
 - [TorsionTuner](https://github.com/elkins/TorsionTuner) — GNN refinement (depends on diff-biophys)
 - [resonance-flow](https://github.com/elkins/resonance-flow) — NMR-guided folding (depends on diff-biophys)
