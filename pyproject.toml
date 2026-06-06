@@ -115,6 +115,7 @@ module = [
     "jaxlib.*",
     "numpy.*",
     "synth_nmr.*",
+    "torch.*",
 ]
 ignore_missing_imports = true
 
