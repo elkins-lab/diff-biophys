@@ -40,6 +40,8 @@ jobs:
         - python-version: "3.14"
           jax-version: "0.4.20"
 
+        - os: windows-latest
+          python-version: '3.14'
     steps:
     - uses: actions/checkout@v4
 
