@@ -43,7 +43,7 @@ dev = [
     "ipython",
     "synth-pdb",
     "synth-nmr",
-    "synth-core @ file:///Users/georgeelkins/nmr/synth-core",
+    "synth-core @ git+https://github.com/elkins/synth-core.git",
 ]
 torch = ["torch>=2.0.0"]
 examples = ["optax>=0.1.0", "matplotlib>=3.5.0"]
