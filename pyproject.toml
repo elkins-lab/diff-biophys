@@ -43,7 +43,10 @@ dev = [
     "ipython",
     "synth-pdb",
     "synth-nmr",
+    "synth-core @ file:///Users/georgeelkins/nmr/synth-core",
 ]
+torch = ["torch>=2.0.0"]
+examples = ["optax>=0.1.0", "matplotlib>=3.5.0"]
 
 [tool.setuptools.packages.find]
 include = ["diff_biophys*"]
