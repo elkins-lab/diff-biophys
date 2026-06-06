@@ -25,7 +25,7 @@ def compute_bond_angles(coords: jnp.ndarray) -> jnp.ndarray:
     v2_norm = v2 / (jnp.linalg.norm(v2, axis=-1, keepdims=True) + 1e-10)
 
     cos_angle = jnp.sum(v1_norm * v2_norm, axis=-1)
-    return cast(jnp.ndarray, jnp.acos(jnp.clip(cos_angle, -1.0 + 1e-7, 1.0 - 1e-7)))
+    return cast(jnp.ndarray, jnp.arccos(jnp.clip(cos_angle, -1.0 + 1e-7, 1.0 - 1e-7)))
 
 
 @jit
@@ -54,4 +54,4 @@ def compute_dihedrals(coords: jnp.ndarray) -> jnp.ndarray:
     # y = dot product of cross(u1, v) and w
     y = jnp.sum(jnp.cross(u1, v) * w, axis=-1)
 
-    return cast(jnp.ndarray, jnp.atan2(y, x))
+    return cast(jnp.ndarray, jnp.arctan2(y, x))

@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 try:
     import jax
@@ -49,6 +49,6 @@ def jax_to_torch(jax_fn: Callable) -> Callable:
             return tuple(torch_grads)
 
     def wrapper(*args: torch.Tensor) -> torch.Tensor:
-        return JaxToTorchWrapper.apply(*args)
+        return cast(torch.Tensor, JaxToTorchWrapper.apply(*args))
 
     return wrapper
