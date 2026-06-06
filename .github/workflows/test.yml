@@ -42,10 +42,10 @@ jobs:
 
         - os: windows-latest
           python-version: '3.14'
-        - jax-version: 0.4.20
-          numpy-version: 2.2.6
-        - jax-version: 0.4.20
-          numpy-version: 2.3.5
+        - jax-version: "0.4.20"
+          numpy-version: "2.2.6"
+        - jax-version: "0.4.20"
+          numpy-version: "2.3.5"
     steps:
     - uses: actions/checkout@v4
 
