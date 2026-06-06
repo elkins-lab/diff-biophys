@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ "master", "main" ]
+    branches: ["master", "main"]
   pull_request:
-    branches: [ "master", "main" ]
+    branches: ["master", "main"]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -23,22 +23,22 @@ jobs:
         numpy-version: ["1.26.4", "2.2.6", "2.3.5"]
         jax-version: ["0.4.20", "latest"]
         exclude:
-          - python-version: "3.11"
-            numpy-version: "2.2.6"
-          - python-version: "3.11"
-            numpy-version: "2.3.5"
-          - python-version: "3.12"
-            numpy-version: "2.2.6"
-          - python-version: "3.12"
-            numpy-version: "2.3.5"
-          - python-version: "3.13"
-            numpy-version: "1.26.4"
-          - python-version: "3.14"
-            numpy-version: "1.26.4"
-          - python-version: "3.13"
-            jax-version: "0.4.20"
-          - python-version: "3.14"
-            jax-version: "0.4.20"
+        - python-version: "3.11"
+          numpy-version: "2.2.6"
+        - python-version: "3.11"
+          numpy-version: "2.3.5"
+        - python-version: "3.12"
+          numpy-version: "2.2.6"
+        - python-version: "3.12"
+          numpy-version: "2.3.5"
+        - python-version: "3.13"
+          numpy-version: "1.26.4"
+        - python-version: "3.14"
+          numpy-version: "1.26.4"
+        - python-version: "3.13"
+          jax-version: "0.4.20"
+        - python-version: "3.14"
+          jax-version: "0.4.20"
 
     steps:
     - uses: actions/checkout@v4
@@ -57,6 +57,7 @@ jobs:
         fi
         pip install -e ".[dev,torch]"
 
+      shell: bash
     - name: Check typing with mypy
       run: |
         mypy diff_biophys/
