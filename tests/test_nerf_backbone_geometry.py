@@ -56,7 +56,7 @@ def test_nerf_preserves_bond_angle():
     v1 = p2 - p3
     v2 = p4 - p3
     cos_a = jnp.dot(v1, v2) / (jnp.linalg.norm(v1) * jnp.linalg.norm(v2))
-    actual_angle = float(jnp.acos(jnp.clip(cos_a, -1.0, 1.0)))
+    actual_angle = float(jnp.arccos(jnp.clip(cos_a, -1.0, 1.0)))
 
     np.testing.assert_allclose(
         actual_angle,

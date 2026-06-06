@@ -27,7 +27,7 @@ def jax_to_torch(jax_fn: Callable) -> Callable:
         @staticmethod
         def forward(ctx: Any, *args: torch.Tensor) -> torch.Tensor:
             # Convert PyTorch tensors to JAX arrays via DLPack natively
-            jax_args = [jax.dlpack.from_dlpack(x) for x in args]
+            jax_args = [jax.dlpack.from_dlpack(x.detach()) for x in args]
 
             # Compute the forward pass and its VJP (Vector-Jacobian Product) function
             y, vjp_fn = jax.vjp(jax_fn, *jax_args)
