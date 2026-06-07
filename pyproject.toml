@@ -4,16 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diff-biophys"
-version = "0.1.2"
+version = "0.1.3"
 description = "Differentiable biophysical modeling in JAX"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "George Elkins"}]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -43,7 +42,7 @@ dev = [
     "ipython",
     "synth-pdb",
     "synth-nmr",
-    "synth-core @ git+https://github.com/elkins/synth-core.git",
+    "synth-core",
 ]
 torch = ["torch>=2.0.0"]
 examples = ["optax>=0.1.0", "matplotlib>=3.5.0"]

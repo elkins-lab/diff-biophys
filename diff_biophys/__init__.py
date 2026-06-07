@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = "0.1.3"
 from . import cryo_em
 from .ensemble import Ensemble
 
