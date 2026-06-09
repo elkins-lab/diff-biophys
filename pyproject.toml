@@ -62,7 +62,7 @@ python_functions = ["test_*"]
 # ── Linter & formatter ────────────────────────────────────────────────────────
 [tool.ruff]
 line-length = 100
-exclude = ["examples/*.ipynb"]  # notebook has known JSON corruption
+exclude = ["examples/*.ipynb"]  # notebooks are validated by tests, not linted by ruff
 target-version = "py310"
 
 [tool.ruff.format]
