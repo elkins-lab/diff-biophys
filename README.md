@@ -49,6 +49,7 @@ Experience **Diff-Biophys** directly in your browser with our Colab tutorials:
 - **NeRF (Natural Extension Reference Frame):** Differentiable conversion from internal coordinates ($\phi, \psi, \omega$, bond lengths/angles) to Cartesian XYZ.
 - **Kabsch Alignment:** Differentiable optimal superposition using SVD.
 - **Torsion Analysis:** Vectorized calculation of all backbone and side-chain dihedrals.
+- **Macroscopic Properties:** Differentiable Radius of Gyration ($R_g$) for driving compaction/expansion during structural optimization.
 
 ### 2. `diff_biophys.saxs` (Differentiable Scattering)
 - **Debye Formula:** $O(N^2)$ inter-atomic interference summation.
