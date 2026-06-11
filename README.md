@@ -25,6 +25,14 @@ To bridge the gap between static structural models and experimental solution-sta
 
 ---
 
+## 🌉 The Interdisciplinary Bridge
+
+`diff-biophys` sits at the intersection of **Machine Learning** and **Structural Biology**. If you find the terminology confusing, please read our **[Concepts & Context Guide](https://elkins.github.io/diff-biophys/concepts/)**! It acts as a "Rosetta Stone" to explain:
+* **For ML Engineers:** What SAXS and NMR are, and why traditional physics code can't be used in PyTorch/JAX loss functions.
+* **For Biologists:** What automatic differentiation is, why JAX is used instead of traditional Monte Carlo/Simulated Annealing, and how it enables optimization on GPUs.
+
+---
+
 ## 🏗️ Core Components
 
 ### 1. `diff_biophys.geometry` (Differentiable Structural Engine)

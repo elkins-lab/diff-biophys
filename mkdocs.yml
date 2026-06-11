@@ -18,6 +18,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Concepts & Context: concepts.md
   - Use Cases: use_cases.md
   - Core Theory: theory.md
   - API Reference:
