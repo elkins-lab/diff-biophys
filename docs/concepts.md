@@ -49,6 +49,16 @@ Furthermore, because it's built on JAX, these calculations can be heavily vector
 
 ---
 
+## 🚀 Why JAX? A Primer
+
+For those unfamiliar, [JAX](https://github.com/google/jax) is a numerical computing library developed by Google Research. It is often described as "NumPy on steroids." We chose JAX for DiffBiophys for three specific reasons:
+
+1. **`jit` (Just-In-Time Compilation):** JAX can trace a Python function and compile it directly to highly optimized XLA (Accelerated Linear Algebra) machine code for CPUs, GPUs, or TPUs. This allows our biophysical physics kernels to run at C++ speeds without writing C++ code.
+2. **`vmap` (Vectorizing Map):** In structural biology, we rarely work with a single protein state; we work with *ensembles* of thousands of states. JAX's `vmap` automatically vectorizes our physics equations, allowing us to evaluate an entire ensemble in parallel on a GPU without writing complex batching loops.
+3. **`grad` (Automatic Differentiation):** JAX provides exact mathematical derivatives for our calculations. This means that if we calculate the SAXS profile of a protein, we can ask JAX: *"How should I move the atomic coordinates to make this SAXS profile match the experimental data?"* JAX gives us the exact gradient to follow.
+
+---
+
 ## 🕰️ Historical Context
 
 For decades, structural biology relied on rigid, static models derived from X-ray crystallography. Today, the frontier has shifted to **integrative structural biology**—combining AI predictions with sparse experimental data (Cryo-EM, NMR, SAXS, Cross-linking) to determine dynamic ensembles.

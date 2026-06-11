@@ -130,7 +130,7 @@ diff-biophys is the **differentiable engine** powering the higher-level tools in
 - [diff-hdx](https://github.com/elkins/diff-hdx) — Differentiable HDX-MS (new)
 - [diff-epr](https://github.com/elkins/diff-epr) — Differentiable EPR/DEER (new)
 - [diff-ensemble](https://github.com/elkins/diff-ensemble) — IDP ensemble VAE (depends on diff-biophys)
-- [TorsionTuner](https://github.com/elkins/TorsionTuner) — GNN refinement (depends on diff-biophys)
+- [torsion-tuner](https://github.com/elkins/torsion-tuner) — GNN refinement (depends on diff-biophys)
 - [resonance-flow](https://github.com/elkins/resonance-flow) — NMR-guided folding (depends on diff-biophys)
 
 ## ⚖️ License
