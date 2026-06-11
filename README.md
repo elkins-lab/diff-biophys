@@ -8,7 +8,7 @@
 [![JAX](https://img.shields.io/badge/backend-JAX-9cf.svg)](https://github.com/google/jax)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/diff_biophys_showcase.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb)
 
 **DiffBiophys** is a high-performance Python library for differentiable biophysical modeling. Built on **JAX**, it re-implements core structural biology and spectroscopy observables (SAXS, NMR, CD) as hardware-accelerated, auto-differentiable kernels.
 
@@ -90,7 +90,7 @@ diff-biophys/
 │   ├── cd/                # CD simulation (DeVoe Matrix Method)
 │   └── ensemble.py        # Ensemble averaging API
 ├── tests/                 # Parity, gradient, and scientific validation checks
-├── examples/              # Jupyter notebooks (Refinement Lab)
+├── examples/interactive_tutorials/              # Jupyter notebooks (Refinement Lab)
 ├── docs/                  # API and Theory
 ├── pyproject.toml         # Modern build config
 └── README.md
