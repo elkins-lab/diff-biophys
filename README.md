@@ -8,11 +8,10 @@
 [![JAX](https://img.shields.io/badge/backend-JAX-9cf.svg)](https://github.com/google/jax)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb)
 
 **DiffBiophys** is a high-performance Python library for differentiable biophysical modeling. Built on **JAX**, it re-implements core structural biology and spectroscopy observables (SAXS, NMR, CD) as hardware-accelerated, auto-differentiable kernels.
 
-**[Documentation Website](https://elkins.github.io/diff-biophys/)** | **[Use Cases](https://elkins.github.io/diff-biophys/use_cases/)**
+**[Documentation Website](https://elkins.github.io/diff-biophys/)** | **[Use Cases](https://elkins.github.io/diff-biophys/use_cases/)** | **[Tutorials](#-interactive-tutorials)**
 
 ---
 
@@ -30,6 +29,17 @@ To bridge the gap between static structural models and experimental solution-sta
 `diff-biophys` sits at the intersection of **Machine Learning** and **Structural Biology**. If you find the terminology confusing, please read our **[Concepts & Context Guide](https://elkins.github.io/diff-biophys/concepts/)**! It acts as a "Rosetta Stone" to explain:
 * **For ML Engineers:** What SAXS and NMR are, and why traditional physics code can't be used in PyTorch/JAX loss functions.
 * **For Biologists:** What automatic differentiation is, why JAX is used instead of traditional Monte Carlo/Simulated Annealing, and how it enables optimization on GPUs.
+
+---
+
+## 📚 Interactive Tutorials
+
+Experience **DiffBiophys** directly in your browser with our Colab tutorials:
+
+| Tutorial | Description | Action |
+| :--- | :--- | :--- |
+| [**🧪 DiffBiophys Showcase**](examples/interactive_tutorials/diff_biophys_showcase.ipynb) | A complete overview of the JAX-accelerated SAXS and NMR kernels. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb) |
+| [**🔬 Structure Refinement Lab**](examples/interactive_tutorials/structure_refinement.ipynb) | Learn how to use gradient descent to optimize protein structures against experimental SAXS profiles. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/interactive_tutorials/structure_refinement.ipynb) |
 
 ---
 
