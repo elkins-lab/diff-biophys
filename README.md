@@ -155,7 +155,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 @software{diff_biophys,
   author  = {Elkins, George},
   title   = {diff-biophys: Differentiable biophysics kernels for JAX},
-  year    = {2024},
+  year    = {2026},
   url     = {https://github.com/elkins/diff-biophys},
   version = {0.1.2}
 }
