@@ -79,6 +79,19 @@ Experience **Diff-Biophys** directly in your browser with our Colab tutorials:
 
 ---
 
+## 🧪 Scientific Validation
+
+DiffBiophys is validated against foundational biophysical principles and analytical solutions to ensure physical realism:
+
+* **SAXS Guinier Approximation:** Recovers correct $R_g$ from low-q scattering slopes (`test_saxs_guinier.py`).
+* **SAXS Analytic Sphere:** Reproduces the theoretical scattering profile of a uniform sphere (`test_science_saxs_sphere.py`).
+* **SAXS Kratky Topology:** Correctly distinguishes between globular and unfolded topologies via Kratky plot signatures (`test_science_saxs_kratky.py`).
+* **SAXS $P(r)$ Distribution:** Matches analytical pair-distance distribution for spheres (Guinier 1939) with $>0.98$ correlation (`test_science_saxs_pr.py`).
+* **NMR RDC Physics:** Verified 1/r³ distance scaling and $(3\cos^2\theta - 1)$ angular dependence, including zero coupling at the Magic Angle (`test_science_rdc_angular.py`).
+* **NMR Ring Currents:** Reproduces shielding/deshielding cones of the Johnson-Bovey model (`test_science_ring_currents.py`).
+
+---
+
 ## 🚀 Roadmap
 
 ### Phase 1: Foundations (Alpha)
