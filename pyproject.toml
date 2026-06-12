@@ -30,7 +30,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/elkins/diff-biophys"
 Repository = "https://github.com/elkins/diff-biophys"
-Documentation = "https://elkins.github.io/diff-biophys/"
+Documentation = "https://elkins-lab.github.io/diff-biophys/"
 
 [project.optional-dependencies]
 dev = [
