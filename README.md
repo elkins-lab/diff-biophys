@@ -37,10 +37,13 @@ To bridge the gap between static structural models and experimental solution-sta
 
 Experience **Diff-Biophys** directly in your browser with our Colab tutorials:
 
-| Tutorial | Description | Action |
-| :--- | :--- | :--- |
-| [**🧪 Diff-Biophys Showcase**](examples/interactive_tutorials/diff_biophys_showcase.ipynb) | A complete overview of the JAX-accelerated SAXS and NMR kernels. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb) |
-| [**🔬 Structure Refinement Lab**](examples/interactive_tutorials/structure_refinement.ipynb) | Learn how to use gradient descent to optimize protein structures against experimental SAXS profiles. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/structure_refinement.ipynb) |
+| Tutorial | Audience | Description | Action |
+| :--- | :--- | :--- | :--- |
+| [**🎓 Hello, Gradient Descent!**](examples/interactive_tutorials/01_hello_gradient_descent.ipynb) | Undergrad (any) | No biology needed. Learn what a gradient is, how gradient descent works, and how JAX computes gradients automatically — then fit a real Karplus curve. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/01_hello_gradient_descent.ipynb) |
+| [**🔬 NMR Fundamentals**](examples/interactive_tutorials/02_nmr_fundamentals.ipynb) | Undergrad (bio/chem) | Chemical shifts, the Karplus equation, RDCs, and the magic angle — computed differentiably and connected back to protein backbone torsion angles. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/02_nmr_fundamentals.ipynb) |
+| [**💡 CD Spectroscopy**](examples/interactive_tutorials/03_cd_spectroscopy.ipynb) | Undergrad (bio/chem) | Build an α-helix from scratch, simulate its CD spectrum via the DeVoe model, watch it change as the helix unwinds, and compute the gradient of [θ]₂₂₂ w.r.t. atomic positions. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/03_cd_spectroscopy.ipynb) |
+| [**🧪 Diff-Biophys Showcase**](examples/interactive_tutorials/diff_biophys_showcase.ipynb) | Graduate / researcher | A complete overview of the JAX-accelerated SAXS and NMR kernels. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb) |
+| [**⚗️ Structure Refinement Lab**](examples/interactive_tutorials/structure_refinement.ipynb) | Graduate / researcher | Use gradient descent to optimize protein structures against experimental SAXS profiles. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/structure_refinement.ipynb) |
 
 ---
 
@@ -106,7 +109,7 @@ DiffBiophys is validated against foundational biophysical principles and analyti
 
 ### Phase 3: Integration & Optimization (v1.0)
 - [x] Full CD matrix-method implementation (DeVoe theory).
-- [ ] Example notebooks for structure refinement via gradient descent.
+- [x] Example notebooks for structure refinement via gradient descent.
 - [ ] Plugin for `torch`-based AI models to use biophysical loss functions.
 - [ ] Full support for BinaryCIF streaming.
 
