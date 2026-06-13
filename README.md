@@ -1,10 +1,10 @@
 # 🧬 Diff-Biophys: Differentiable Biophysics for the AI Era
 
-[![Tests](https://github.com/elkins/diff-biophys/actions/workflows/test.yml/badge.svg)](https://github.com/elkins/diff-biophys/actions/workflows/test.yml)
+[![Tests](https://github.com/elkins-lab/diff-biophys/actions/workflows/test.yml/badge.svg)](https://github.com/elkins-lab/diff-biophys/actions/workflows/test.yml)
 [![PyPI version](https://img.shields.io/pypi/v/diff-biophys.svg)](https://pypi.org/project/diff-biophys/)
 [![Python 3.10+](https://img.shields.io/pypi/pyversions/diff-biophys.svg)](https://pypi.org/project/diff-biophys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/elkins/diff-biophys/branch/main/graph/badge.svg)](https://codecov.io/gh/elkins/diff-biophys)
+[![codecov](https://codecov.io/gh/elkins-lab/diff-biophys/branch/main/graph/badge.svg)](https://codecov.io/gh/elkins-lab/diff-biophys)
 [![JAX](https://img.shields.io/badge/backend-JAX-9cf.svg)](https://github.com/google/jax)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
@@ -39,8 +39,8 @@ Experience **Diff-Biophys** directly in your browser with our Colab tutorials:
 
 | Tutorial | Description | Action |
 | :--- | :--- | :--- |
-| [**🧪 Diff-Biophys Showcase**](examples/interactive_tutorials/diff_biophys_showcase.ipynb) | A complete overview of the JAX-accelerated SAXS and NMR kernels. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb) |
-| [**🔬 Structure Refinement Lab**](examples/interactive_tutorials/structure_refinement.ipynb) | Learn how to use gradient descent to optimize protein structures against experimental SAXS profiles. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins/diff-biophys/blob/main/examples/interactive_tutorials/structure_refinement.ipynb) |
+| [**🧪 Diff-Biophys Showcase**](examples/interactive_tutorials/diff_biophys_showcase.ipynb) | A complete overview of the JAX-accelerated SAXS and NMR kernels. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/diff_biophys_showcase.ipynb) |
+| [**🔬 Structure Refinement Lab**](examples/interactive_tutorials/structure_refinement.ipynb) | Learn how to use gradient descent to optimize protein structures against experimental SAXS profiles. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/structure_refinement.ipynb) |
 
 ---
 
@@ -142,21 +142,21 @@ pip install "jax[cuda12]" diff-biophys
 
 ## 🤝 Contributing
 
-Contributions are welcome from both ML and structural biology communities! Please open an issue or pull request on [GitHub](https://github.com/elkins/diff-biophys). Run `pre-commit run --all-files` before submitting.
+Contributions are welcome from both ML and structural biology communities! Please open an issue or pull request on [GitHub](https://github.com/elkins-lab/diff-biophys). Run `pre-commit run --all-files` before submitting.
 
 ## 🔗 Related Projects
 
 diff-biophys is the **differentiable engine** powering the higher-level tools in this ecosystem:
 
-- [synth-pdb](https://github.com/elkins/synth-pdb) — Synthetic structure generation (uses NumPy implementations)
-- [synth-nmr](https://github.com/elkins/synth-nmr) — NMR observables (optional dependency)
-- [synth-saxs](https://github.com/elkins/synth-saxs) — SAXS profile simulator
-- [diff-fret](https://github.com/elkins/diff-fret) — Differentiable FRET (new)
-- [diff-hdx](https://github.com/elkins/diff-hdx) — Differentiable HDX-MS (new)
-- [diff-epr](https://github.com/elkins/diff-epr) — Differentiable EPR/DEER (new)
-- [diff-ensemble](https://github.com/elkins/diff-ensemble) — IDP ensemble VAE (depends on diff-biophys)
-- [torsion-tuner](https://github.com/elkins/torsion-tuner) — GNN refinement (depends on diff-biophys)
-- [resonance-flow](https://github.com/elkins/resonance-flow) — NMR-guided folding (depends on diff-biophys)
+- [synth-pdb](https://github.com/elkins-lab/synth-pdb) — Synthetic structure generation (uses NumPy implementations)
+- [synth-nmr](https://github.com/elkins-lab/synth-nmr) — NMR observables (optional dependency)
+- [synth-saxs](https://github.com/elkins-lab/synth-saxs) — SAXS profile simulator
+- [diff-fret](https://github.com/elkins-lab/diff-fret) — Differentiable FRET (new)
+- [diff-hdx](https://github.com/elkins-lab/diff-hdx) — Differentiable HDX-MS (new)
+- [diff-epr](https://github.com/elkins-lab/diff-epr) — Differentiable EPR/DEER (new)
+- [diff-ensemble](https://github.com/elkins-lab/diff-ensemble) — IDP ensemble VAE (depends on diff-biophys)
+- [torsion-tuner](https://github.com/elkins-lab/torsion-tuner) — GNN refinement (depends on diff-biophys)
+- [resonance-flow](https://github.com/elkins-lab/resonance-flow) — NMR-guided folding (depends on diff-biophys)
 
 ## ⚖️ License
 
@@ -169,7 +169,7 @@ MIT License — see [LICENSE](LICENSE) for details.
   author  = {Elkins, George},
   title   = {diff-biophys: Differentiable biophysics kernels for JAX},
   year    = {2026},
-  url     = {https://github.com/elkins/diff-biophys},
-  version = {0.1.2}
+  url     = {https://github.com/elkins-lab/diff-biophys},
+  version = {0.1.4}
 }
 ```

@@ -28,8 +28,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/elkins/diff-biophys"
-Repository = "https://github.com/elkins/diff-biophys"
+Homepage = "https://github.com/elkins-lab/diff-biophys"
+Repository = "https://github.com/elkins-lab/diff-biophys"
 Documentation = "https://elkins-lab.github.io/diff-biophys/"
 
 [project.optional-dependencies]
@@ -40,6 +40,7 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.8.0",
     "pre-commit>=3.0.0",
+    "optax>=0.1.0",
     "ipython",
     "synth-pdb",
     "synth-nmr",
@@ -116,8 +117,14 @@ module = [
     "numpy.*",
     "synth_nmr.*",
     "torch.*",
+    "optax.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+check_untyped_defs = false
 
 
 
