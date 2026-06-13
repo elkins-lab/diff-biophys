@@ -21,7 +21,9 @@ def position_atom_3d(
     position relative to p3.
 
     Args:
-        p1, p2, p3: (3,) reference atom coordinates.
+        p1: (3,) first reference atom coordinate.
+        p2: (3,) second reference atom coordinate.
+        p3: (3,) third reference atom coordinate (parent of p4).
         bond_length: Scalar distance p3→p4 in Ångströms.
         bond_angle_rad: Scalar bond angle ∠(p2, p3, p4) in radians.
         dihedral_angle_rad: Scalar dihedral angle ∠(p1, p2, p3, p4) in radians.

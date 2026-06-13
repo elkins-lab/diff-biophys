@@ -25,6 +25,11 @@ nav:
       - Geometry: api/geometry.md
       - SAXS: api/saxs.md
       - NMR: api/nmr.md
+      - CD & Cryo-EM: api/cd_and_cryoem.md
+  - Tutorials:
+      - 01 · Hello, Gradient Descent!: https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/01_hello_gradient_descent.ipynb
+      - 02 · NMR Fundamentals: https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/02_nmr_fundamentals.ipynb
+      - 03 · CD Spectroscopy: https://colab.research.google.com/github/elkins-lab/diff-biophys/blob/main/examples/interactive_tutorials/03_cd_spectroscopy.ipynb
   - Examples:
       - Refinement Lab: examples/refinement.md
 

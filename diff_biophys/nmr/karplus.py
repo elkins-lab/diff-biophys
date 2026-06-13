@@ -11,7 +11,9 @@ def calculate_karplus_j(theta: jnp.ndarray, a: float, b: float, c: float) -> jnp
 
     Args:
         theta: (N,) Dihedral angles in radians.
-        a, b, c: Empirical Karplus parameters.
+        a: Cosine-squared coefficient (Hz).
+        b: Cosine coefficient (Hz).
+        c: Constant offset (Hz).
 
     Returns:
         jnp.ndarray: (N,) Calculated J-couplings.
