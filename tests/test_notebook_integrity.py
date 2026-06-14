@@ -39,7 +39,7 @@ def test_notebook_execution(notebook_path: str) -> None:
     if not path.exists():
         pytest.skip(f"Notebook {notebook_path} not found")
 
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         nb = nbformat.read(f, as_version=4)
 
     client = NotebookClient(nb, timeout=60, kernel_name="python3")
