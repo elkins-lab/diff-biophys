@@ -28,8 +28,11 @@ def test_example_notebooks_are_valid_json() -> None:
 )
 def test_notebook_execution(notebook_path: str) -> None:
     """Smoke test: execute notebooks to ensure they run without errors."""
-    import nbformat
-    from nbclient import NotebookClient
+    try:
+        import nbformat
+        from nbclient import NotebookClient
+    except ImportError:
+        pytest.skip("nbformat or nbclient not installed")
 
     path = ROOT / notebook_path
     if not path.exists():
