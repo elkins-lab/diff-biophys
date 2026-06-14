@@ -24,6 +24,7 @@ def test_example_notebooks_are_valid_json() -> None:
         "examples/interactive_tutorials/01_hello_gradient_descent.ipynb",
         "examples/interactive_tutorials/02_nmr_fundamentals.ipynb",
         "examples/interactive_tutorials/04_protein_folding_nerf.ipynb",
+        "examples/interactive_tutorials/05_hybrid_refinement_pdb.ipynb",
     ],
 )
 def test_notebook_execution(notebook_path: str) -> None:
