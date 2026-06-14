@@ -49,7 +49,27 @@ Experience **Diff-Biophys** directly in your browser with our Colab tutorials:
 
 ---
 
-## 🏗️ Core Components
+## ⛰️ Real-World Considerations: The Rugged Landscape
+
+Protein conformational space is notoriously **rugged**, filled with countless local minima ("traps") that can catch a simple gradient descent optimizer. It is important to be realistic about where differentiable physics excels and where it has limitations.
+
+### 1. The Local Minimum Problem
+Because gradient descent (the core of this library) follows the mathematically steepest path, it will always slide into the nearest "valley." If your starting structure is very far from the correct fold (e.g., a random string of atoms), the optimizer may get stuck in a physically impossible or non-native local minimum.
+
+### 2. The "Experimental Funnel"
+Differentiable physics is most powerful when combined with **experimental data (RDCs, SAXS, FSC)**. These observables act like a "global gravitational pull." Because a SAXS curve or an RDC depends on the *entire* shape of the molecule, they create a much wider and smoother "basin of attraction" than pure physical forces (like hydrogen bonds), helping the optimizer cross small physical "bumps" in the landscape.
+
+### 3. The Recommended Hybrid Workflow
+For complex proteins, we do not recommend "folding from scratch." Instead, use a **Hybrid Refinement** strategy:
+1. **Initial State:** Use **AlphaFold** or **synth-pdb** to generate a "physically plausible" starting structure that is in the correct global neighborhood.
+2. **Gradient Descent:** Use **diff-biophys** to surgically "slide" that structure down the final few inches to match the exact experimental solution data.
+
+### 4. What is "Adam"?
+In our tutorials, we use an optimizer called **Adam** (Adaptive Moment Estimation). Think of it as "gradient descent with memory and friction." Unlike a simple ball rolling down a hill, Adam:
+- **Momentum:** Remembers its previous speed to help roll over small local dips.
+- **Adaptive Steps:** Automatically slows down in steep areas and speeds up in flat plains, making it much more robust than standard gradient descent.
+
+---
 
 ### 1. `diff_biophys.geometry` (Differentiable Structural Engine)
 - **NeRF (Natural Extension Reference Frame):** Differentiable conversion from internal coordinates ($\phi, \psi, \omega$, bond lengths/angles) to Cartesian XYZ.

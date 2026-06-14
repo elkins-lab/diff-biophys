@@ -101,7 +101,17 @@ $$\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t - \eta \, \nabla_{\boldsymbo
 
 The gradient $$\nabla \mathcal{L}$$ points *directly* towards the steepest descent direction. Adaptive optimisers (Adam, L-BFGS) further rescale steps per parameter, making optimisation robust to ill-conditioned loss landscapes — exactly the situation in ensemble refinement where SAXS and NMR restraints have very different scales and curvatures.
 
-That said, gradient descent finds local minima, not global ones. DiffBiophys is most powerful when combined with a good initialisation (e.g., an AlphaFold prediction) or a stochastic initialisation strategy, with gradient descent performing fast, accurate local refinement.
+### Gradient descent finds local minima, not global ones.
+
+DiffBiophys is most powerful when combined with a good initialisation (e.g., an AlphaFold prediction) or a stochastic initialisation strategy, with gradient descent performing fast, accurate local refinement.
+
+#### ⛰️ The Real-World Limitation: Rugged Landscapes
+Protein conformational space is notoriously "rugged." It is filled with thousands of local minima (traps) where a simple gradient descent ball will get stuck before reaching the "true" global minimum.
+
+**Why differentiate anyway?**
+While gradients don't solve the "global search" problem on their own, they solve the "convergence" problem. Once you are in the correct "neighborhood" (e.g., via an AlphaFold model or a `synth-pdb` generated decoy), gradient descent can find the exact experimental solution 1,000x faster than Monte Carlo sampling.
+
+Additionally, experimental observables (like SAXS and RDCs) often have a **smoothing effect** on the landscape. Because these signals depend on the global shape of the molecule, they can "pull" the structure through small energetic bumps that would trap a purely physics-based simulation.
 
 ### How JAX `jit` + `vmap` Delivers GPU Speed for Ensembles
 
