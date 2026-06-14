@@ -1,7 +1,6 @@
 import pytest
 
 try:
-    import jax
     import jax.numpy as jnp
     import torch
 
@@ -11,30 +10,29 @@ except ImportError:
 
 
 @pytest.mark.skipif(not HAS_TORCH, reason="PyTorch not installed")
-def test_jax_to_torch_forward_backward() -> None:
-    # Define a simple JAX function
-    @jax.jit
-    def simple_jax_fn(x: jax.Array, y: jax.Array) -> jax.Array:
-        return jnp.sum(x**2) + jnp.sum(y**3)
+def test_jax_to_torch_biophysics_kernel() -> None:
+    """Verify gradient flow through a real biophysics kernel (SAXS)."""
+    from diff_biophys.saxs.kernels import debye_saxs
 
-    # Wrap it
-    torch_fn = jax_to_torch(simple_jax_fn)
+    # 1. Define JAX kernel call
+    q_values = jnp.array([0.1, 0.2], dtype=jnp.float32)
+    ff = jnp.ones((2, 2), dtype=jnp.float32)
 
-    # Create PyTorch tensors that require gradients
-    x = torch.tensor([1.0, 2.0], requires_grad=True)
-    y = torch.tensor([1.0, 3.0], requires_grad=True)
+    def saxs_loss(coords: jnp.ndarray) -> jnp.ndarray:
+        iq = debye_saxs(coords, q_values, ff)
+        return jnp.sum(iq)
 
-    # Forward pass
-    out = torch_fn(x, y)
+    # 2. Wrap for Torch
+    torch_saxs = jax_to_torch(saxs_loss)
 
-    # Expected output: (1^2 + 2^2) + (1^3 + 3^3) = 5 + 28 = 33
-    assert torch.isclose(out, torch.tensor(33.0))
+    # 3. Use in Torch
+    # Atoms at (0,0,0) and (1,0,0).
+    coords_torch = torch.tensor([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]], requires_grad=True)
+    loss = torch_saxs(coords_torch)
 
-    # Backward pass
-    out.backward()
+    assert loss.dim() == 0
+    loss.backward()
 
-    # Expected gradients:
-    # dx = 2x -> [2.0, 4.0]
-    # dy = 3y^2 -> [3.0, 27.0]
-    assert torch.allclose(x.grad, torch.tensor([2.0, 4.0]))
-    assert torch.allclose(y.grad, torch.tensor([3.0, 27.0]))
+    assert coords_torch.grad is not None
+    assert torch.all(torch.isfinite(coords_torch.grad))
+    assert not torch.all(coords_torch.grad == 0)

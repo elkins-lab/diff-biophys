@@ -79,9 +79,11 @@ def calculate_q_factor(calculated_rdcs: jnp.ndarray, experimental_rdcs: jnp.ndar
     """
     diff_sq = jnp.sum((calculated_rdcs - experimental_rdcs) ** 2)
     exp_sq = jnp.sum(experimental_rdcs**2)
-    # Use jnp.where so Q is exactly 0 when calc == exp, and well-defined
-    # when experimental_rdcs is identically zero (trivial perfect match).
-    return jnp.where(exp_sq > 0.0, jnp.sqrt(diff_sq / exp_sq), 0.0)
+
+    # Robust Q-factor calculation to avoid NaN gradients at zero experimental RDCs.
+    # We use a safe denominator for the division and then mask the result.
+    q = jnp.sqrt(diff_sq / jnp.maximum(exp_sq, 1e-10))
+    return jnp.where(exp_sq > 0.0, q, 0.0)
 
 
 @jit

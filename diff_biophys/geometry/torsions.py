@@ -54,4 +54,5 @@ def compute_dihedrals(coords: jnp.ndarray) -> jnp.ndarray:
     # y = dot product of cross(u1, v) and w
     y = jnp.sum(jnp.cross(u1, v) * w, axis=-1)
 
-    return cast(jnp.ndarray, jnp.arctan2(y, x))
+    # Use a small epsilon to ensure x and y are not both zero, avoiding NaN gradients
+    return cast(jnp.ndarray, jnp.arctan2(y, x + 1e-10))
