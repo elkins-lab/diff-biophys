@@ -109,3 +109,31 @@ def test_ensemble_pytree_jit() -> None:
     res = get_coords(ens)
     assert jnp.all(res == 0.0)
     assert res.shape == (2, 3, 3)
+
+
+def test_nmr_constants_loading() -> None:
+    """Verify that NMR constants are accessible and contain expected keys."""
+    from diff_biophys.nmr import constants
+
+    assert constants.KARPLUS_A > 0
+    assert "PHE" in constants.RING_INTENSITIES
+    assert constants.RING_INTENSITIES["TRP"] > constants.RING_INTENSITIES["HIS"]
+
+
+def test_saxs_solvent_density_grad() -> None:
+    """Verify that intensity is differentiable w.r.t. solvent density."""
+    coords = jnp.array([[0.0, 0.0, 0.0], [5.0, 0.0, 0.0]])
+    q_values = jnp.array([0.1])
+    ff = jnp.full((2, 1), 6.0)  # Carbon form factor at q=0 is 6 electrons
+    vols = jnp.array([16.44, 16.44])  # Carbon volume
+    rho = 0.334  # e/A^3
+
+    def loss(solvent_rho: float) -> jnp.ndarray:
+        iq = debye_saxs(coords, q_values, ff, volumes=vols, solvent_density=solvent_rho)
+        return jnp.sum(iq)
+
+    grad = jax.grad(loss)(rho)
+    assert jnp.isfinite(grad)
+    # With ff=6 and rho*V approx 0.33*16 = 5.3, f_eff = 6 - 5.3 = 0.7 > 0.
+    # dI/drho = 2 * (sum f_eff) * (-sum volumes) should be negative.
+    assert grad < 0
