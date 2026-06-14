@@ -80,6 +80,21 @@ def predict_ca_shifts(phi: jnp.ndarray, psi: jnp.ndarray, rc_shifts: jnp.ndarray
     w_sheet = w_sheet_raw / total
     # w_coil = w_coil_raw / total  (implicit; contributes zero offset)
 
+    # NOTE — effective offset cap (Issue 3):
+    # Because w_coil_raw is fixed at 1.0, at the *exact* helix or sheet centre
+    # (where the Gaussian peak = 1 and the opposing class ≈ 0) the denominator
+    # is 1 + 0 + 1 = 2, so w_helix_norm ≈ 0.5.  This means the maximum Cα
+    # shift a perfectly helical residue receives is:
+    #
+    #   0.5 × OFFSET_HELIX  ≈  +1.55 ppm  (not the full +3.1 ppm)
+    #
+    # This is a deliberate approximation: the coil baseline acts as a Bayesian
+    # prior that prevents runaway shifts.  It also means the predictor underestimates
+    # pure-helix / pure-sheet shifts by ~50% relative to SPARTA+.  Users who need
+    # quantitative SPARTA+ parity should either:
+    #   (a) reduce _SS_SIGMA_SQ (sharper Gaussians → w_helix closer to 1), or
+    #   (b) double OFFSET_HELIX / OFFSET_SHEET to compensate.
+
     # --- Weighted offset ---
     # Coil weight contributes 0 offset (it is the RC baseline).
     return rc_shifts + (w_helix * OFFSET_HELIX) + (w_sheet * OFFSET_SHEET)

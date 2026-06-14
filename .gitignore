@@ -151,3 +151,4 @@ cython_debug/
 
 # MacOS
 .DS_Store
+examples/interactive_tutorials/generate_notebooks.py
