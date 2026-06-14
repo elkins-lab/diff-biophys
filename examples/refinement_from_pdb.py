@@ -17,10 +17,12 @@ import biotite.structure as stripe
 import biotite.structure.io.pdb as pdb
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
 import optax
 
 from diff_biophys.geometry.nerf import chain_nerf
+from diff_biophys.geometry.superposition import kabsch_alignment
 from diff_biophys.geometry.torsions import compute_dihedrals
 from diff_biophys.nmr.rdc import calculate_q_factor, calculate_rdc
 
@@ -183,6 +185,45 @@ out_pdb.write("examples/refined_output.pdb")
 print("\nRefinement complete!")
 print("Initial Q-factor: ", loss_fn((init_phi, init_psi)))
 print("Final Q-factor:   ", loss_fn(params))
+
+# 6. Visualization (with Kabsch alignment)
+# Align both to target to show the rescue clearly
+R_final, t_final = kabsch_alignment(final_coords, target_coords)
+final_aligned = final_coords @ R_final.T + t_final
+
+R_init, t_init = kabsch_alignment(initial_coords, target_coords)
+init_aligned = initial_coords @ R_init.T + t_init
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection="3d")
+
+ax.plot(
+    target_coords[:, 0],
+    target_coords[:, 1],
+    target_coords[:, 2],
+    "k--",
+    alpha=0.3,
+    label="Target",
+)
+ax.plot(
+    init_aligned[:, 0],
+    init_aligned[:, 1],
+    init_aligned[:, 2],
+    "b-",
+    alpha=0.3,
+    label="Initial (Minimized Decoy)",
+)
+ax.plot(
+    final_aligned[:, 0],
+    final_aligned[:, 1],
+    final_aligned[:, 2],
+    "r-",
+    lw=3,
+    label="Refined Result",
+)
+
+ax.set_title("Structural Rescue via Experimental Gradients (Kabsch Aligned)")
+ax.legend()
+plt.show()
+
 print("Saved refined structure to examples/refined_output.pdb")
-print("\nTo visualize the improvement, run:")
-print("synth-pdb --visualize --input-pdb examples/refined_output.pdb")
