@@ -155,6 +155,26 @@ DiffBiophys arrays are JAX `DeviceArray` objects, interoperable with the full sc
 
 ---
 
+## 🎓 Deep Dive into JAX
+
+To truly master differentiable biophysics, it helps to understand the engine under the hood. We recommend exploring the broader JAX ecosystem:
+
+### Core Learning
+- **[Official JAX Documentation](https://jax.readthedocs.io/):** The source of truth for the library.
+- **[JAX 101 Tutorials](https://jax.readthedocs.io/en/latest/jax-101/index.html):** A linear path from "What is JAX?" to advanced vectorization and compilation.
+- **[Knife-Edge Performance (The Sharp Bits)](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html):** Essential reading for avoiding common errors with side effects and state.
+
+### Scientific Context
+- **[JAX, M.D. (ArXiv)](https://arxiv.org/abs/1912.04232):** Learn how the concepts in `diff-biophys` apply to large-scale molecular dynamics and physics simulations.
+- **[Automatic Differentiation in Machine Learning: A Survey](https://arxiv.org/abs/1502.05767):** A deep dive into the math behind the gradients we use for structural refinement.
+
+### High-Level Frameworks
+- **[Optax](https://github.com/google-deepmind/optax):** The gradient processing and optimization library used in our tutorials for managing the Adam optimizer.
+- **[Equinox](https://docs.kidger.site/equinox/):** Provides an elegant, class-based way to build models in JAX, making it very accessible for PyTorch users.
+- **[Flax](https://flax.readthedocs.io/):** Google's flagship neural network library for JAX, ideal for building the AI models that feed into `diff-biophys` loss functions.
+
+---
+
 ## 📚 Glossary
 
 *A plain-English reference for undergraduates. Terms are defined in the context of DiffBiophys and structural biology. Cross-references to other documentation pages are noted where relevant.*

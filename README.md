@@ -189,6 +189,18 @@ diff-biophys is the **differentiable engine** powering the higher-level tools in
 - [torsion-tuner](https://github.com/elkins-lab/torsion-tuner) — GNN refinement (depends on diff-biophys)
 - [resonance-flow](https://github.com/elkins-lab/resonance-flow) — NMR-guided folding (depends on diff-biophys)
 
+---
+
+## 🎓 Learning JAX
+
+Since **Diff-Biophys** is built entirely on JAX, we highly recommend these resources to get the most out of the library:
+
+- **[JAX 101](https://jax.readthedocs.io/en/latest/jax-101/index.html):** The official "must-read" introduction to the JAX functional mindset.
+- **[🔪 JAX - The Sharp Bits](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html):** A mandatory guide on common pitfalls (like immutable arrays and pure functions).
+- **[JAX, M.D.](https://arxiv.org/abs/1912.04232):** The landmark paper on differentiable physics that inspired much of this work.
+- **[Optax Documentation](https://optax.readthedocs.io/):** Learn how to use advanced optimizers (like Adam) that we use in our tutorials.
+- **[Equinox](https://docs.kidger.site/equinox/):** A great library for those who prefer a more PyTorch-like, object-oriented style in JAX.
+
 ## ⚖️ License
 
 MIT License — see [LICENSE](LICENSE) for details.
