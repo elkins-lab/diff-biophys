@@ -132,8 +132,14 @@ DiffBiophys is validated against foundational biophysical principles and analyti
 ### Phase 3: Integration & Optimization (v1.0)
 - [x] Full CD matrix-method implementation (DeVoe theory).
 - [x] Example notebooks for structure refinement via gradient descent.
-- [ ] Plugin for `torch`-based AI models to use biophysical loss functions.
+- [x] Plugin for `torch`-based AI models to use biophysical loss functions (`torch_interop`).
 - [ ] Full support for BinaryCIF streaming.
+
+### Phase 4: Advanced Ensembles & Dynamics (Future)
+- [ ] **Differentiable Side-chain Packing:** Move beyond backbone-only refinement.
+- [ ] **Ensemble Reweighting:** JAX-optimized Maximum Entropy fitting for large IDP trajectories.
+- [ ] **Multiplexed Loss Functions:** Jointly optimize structures against SAXS, NMR, and CD simultaneously.
+- [ ] **Experimental Noise Modeling:** Differentiable Bayesian treatment of experimental uncertainty.
 
 ---
 
