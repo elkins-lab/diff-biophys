@@ -1,0 +1,27 @@
+# 15N-1H RDC data for 2KZV (CvR118A, BMRB 17020)
+# Source: Li, Spaman, Tejero, Montelione et al. (2023) PMID 37257257
+#         RPI GitHub: github.rpi.edu/RPIBioinformatics/BlindAssessmentMonomericAF2Data
+#
+# Format: res_id  res_name  rdc_hz  error_hz  medium
+#
+# PAG = Polyacrylamide Gel (stretched) alignment medium
+# PEG = Polyethylene Glycol alignment medium
+#
+# PUBLISHED BENCHMARKS (from Table 5 of Li et al.):
+#   NMR medoid vs PAG: r2=0.95, Q=0.18
+#   AF2 Model 1 vs PAG: r2=0.92, Q=0.22
+#   Outlier residues (PEG): Thr14, Ser54
+#
+# ─────────────────────────────────────────────────────────────────────────
+# DATA NOT YET POPULATED — Request from Tejero or Montelione lab
+# (github.rpi.edu/RPIBioinformatics/BlindAssessmentMonomericAF2Data)
+# ─────────────────────────────────────────────────────────────────────────
+#
+# Once you have the data, add rows in this format:
+# res_id  res_name  rdc_hz  error_hz  medium
+# 10      GLN       -12.30  0.50      PAG
+# 11      ASP        -8.10  0.50      PAG
+# ...
+#
+# Then run:
+#   python benchmark_2KZV.py --rdc rdc_PAG.tsv --steps 500

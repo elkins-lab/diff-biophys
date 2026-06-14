@@ -1,0 +1,11 @@
+# Large NMR data files — download via fetch_data.py instead
+*.pdb
+*.str
+*.mr
+*.gz
+
+# Auto-generated outputs
+loss_history.txt
+chemical_shifts_raw.txt
+__pycache__/
+*.pyc
