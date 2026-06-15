@@ -1,0 +1,9 @@
+# *.pdb and *.str exceed the 500 KB pre-commit limit
+# Run fetch_data.py to download them locally
+*.pdb
+*.str
+
+# Auto-generated outputs
+loss_history.txt
+__pycache__/
+*.pyc
