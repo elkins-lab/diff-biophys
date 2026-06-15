@@ -58,8 +58,8 @@ With a single alignment medium, the 5 Saupe tensor parameters are determined fro
 | | Cα RMSD (ppm) |
 |---|---|
 | Before | 1.279 |
-| After  | 1.199 |
-| Δ | **+0.080 ppm** |
+| After  | 1.067 |
+| Δ | **+0.212 ppm** |
 
 ### Phase 2 Result (Cα + 3 RDC media, 300 steps)
 

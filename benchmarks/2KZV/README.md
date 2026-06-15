@@ -49,7 +49,8 @@ Uses `diff_biophys.nmr.rdc.fit_saupe_tensor` + `calculate_rdc_from_tensor` again
 | diff-biophys (expected) | TBD | TBD |
 
 ```bash
-# Once rdc_PAG.tsv is populated:
+# Once rdc_PAG.tsv is populated with numerical data:
+# Note: The provided rdc_PAG.tsv is currently a placeholder (header only).
 python benchmark_2KZV.py --rdc rdc_PAG.tsv --steps 500 --w-ca 0.5 --w-rdc 1.0
 ```
 
