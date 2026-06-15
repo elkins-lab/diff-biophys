@@ -16,8 +16,8 @@
 | `bmrb17020.str` | NMR-STAR v3 file (chem. shifts + NOESY) from BMRB | ✅ Downloaded |
 | `parse_bmrb.py` | Parser: extracts Cα/N/HN shifts and RDC tables | ✅ Ready |
 | `benchmark_2KZV.py` | Main benchmark script | ✅ Ready |
-| `rdc_PAG.tsv` | ¹⁵N-¹H RDCs in PAG medium | ⏳ Awaiting from Tejero/Montelione |
-| `rdc_PEG.tsv` | ¹⁵N-¹H RDCs in PEG medium | ⏳ Awaiting from Tejero/Montelione |
+| `rdc_PAG.tsv` | ¹⁵N-¹H RDCs in PAG medium | ⏳ Pending |
+| `rdc_PEG.tsv` | ¹⁵N-¹H RDCs in PEG medium | ⏳ Pending |
 | `loss_history.txt` | Per-step loss values from last run | ✅ Auto-generated |
 
 ---
@@ -60,7 +60,7 @@ python benchmark_2KZV.py --rdc rdc_PAG.tsv --steps 500 --w-ca 0.5 --w-rdc 1.0
 The RDC data is in the RPI GitHub repository:
 > **[github.rpi.edu/RPIBioinformatics/BlindAssessmentMonomericAF2Data](https://github.rpi.edu/RPIBioinformatics/BlindAssessmentMonomericAF2Data)**
 
-This is RPI's GitHub Enterprise (requires RPI login). Contact **Tejero** or **Montelione** for:
+This is RPI's GitHub Enterprise (requires RPI login). Pending:
 - RDC table for 2KZV in PAG medium (primary target)
 - RDC table for 2KZV in PEG medium (secondary validation)
 
