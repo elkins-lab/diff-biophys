@@ -1,27 +1,55 @@
 # 15N-1H RDC data for 2KZV (CvR118A, BMRB 17020)
 # Source: Li, Spaman, Tejero, Montelione et al. (2023) PMID 37257257
-#         RPI GitHub: github.rpi.edu/RPIBioinformatics/BlindAssessmentMonomericAF2Data
+#         Data provided by Roberto Tejero, RPI
+# Columns: res_id  res_name  rdc_hz  err_hz
 #
-# Format: res_id  res_name  rdc_hz  error_hz  medium
+# Medium: PAG (stretched polyacrylamide gel)
+# Table 5 benchmark targets: AF2 Q=0.22 → NMR Q=0.18
+# Xplor err=1.187 Hz; DC/CYANA subset has 23 residues (well-defined regions)
 #
-# PAG = Polyacrylamide Gel (stretched) alignment medium
-# PEG = Polyethylene Glycol alignment medium
-#
-# PUBLISHED BENCHMARKS (from Table 5 of Li et al.):
-#   NMR medoid vs PAG: r2=0.95, Q=0.18
-#   AF2 Model 1 vs PAG: r2=0.92, Q=0.22
-#   Outlier residues (PEG): Thr14, Ser54
-#
-# ─────────────────────────────────────────────────────────────────────────
-# DATA NOT YET POPULATED — Request from Tejero or Montelione lab
-# (github.rpi.edu/RPIBioinformatics/BlindAssessmentMonomericAF2Data)
-# ─────────────────────────────────────────────────────────────────────────
-#
-# Once you have the data, add rows in this format:
-# res_id  res_name  rdc_hz  error_hz  medium
-# 10      GLN       -12.30  0.50      PAG
-# 11      ASP        -8.10  0.50      PAG
-# ...
-#
-# Then run:
-#   python benchmark_2KZV.py --rdc rdc_PAG.tsv --steps 500
+12	MET	1.891	1.187
+14	THR	-1.793	1.187
+15	SER	1.148	1.187
+16	ALA	2.740	1.187
+18	GLU	-1.591	1.187
+19	ALA	2.896	1.187
+20	VAL	2.150	1.187
+21	ALA	-6.090	1.187
+26	TRP	0.900	1.187
+27	ALA	3.503	1.187
+28	GLU	3.728	1.187
+29	LEU	2.795	1.187
+30	SER	-0.426	1.187
+31	ALA	1.930	1.187
+32	VAL	1.801	1.187
+33	GLY	-0.150	1.187
+34	SER	0.596	1.187
+35	TYR	2.563	1.187
+36	LEU	1.289	1.187
+37	ALA	-0.760	1.187
+38	LYS	1.298	1.187
+42	SER	-3.033	1.187
+43	PHE	5.781	1.187
+44	ASP	-2.784	1.187
+46	ARG	1.631	1.187
+47	ASN	3.856	1.187
+49	GLY	1.212	1.187
+51	GLY	4.154	1.187
+52	ARG	0.286	1.187
+56	MET	-1.152	1.187
+57	VAL	-4.290	1.187
+58	LYS	-3.792	1.187
+59	LYS	1.715	1.187
+63	LEU	5.046	1.187
+65	VAL	4.944	1.187
+66	GLN	4.440	1.187
+67	GLU	3.995	1.187
+68	SER	4.037	1.187
+74	LEU	0.617	1.187
+75	HIS	3.192	1.187
+76	SER	1.947	1.187
+77	GLU	4.098	1.187
+78	ILE	3.930	1.187
+79	ARG	4.336	1.187
+80	LEU	3.711	1.187
+81	ARG	1.682	1.187
