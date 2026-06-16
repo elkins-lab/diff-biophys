@@ -16,8 +16,8 @@
 | `bmrb17020.str` | NMR-STAR v3 file (chem. shifts + NOESY) from BMRB | ⬇️ Run `fetch_data.py` |
 | `parse_bmrb.py` | Parser: extracts Cα/N/HN shifts | ✅ Ready |
 | `benchmark_2KZV.py` | Main benchmark script | ✅ Ready |
-| `rdc_PAG.tsv` | ¹⁵N-¹H RDCs in PAG medium (46 residues) | ✅ Complete |
-| `rdc_PEG.tsv` | ¹⁵N-¹H RDCs in PEG medium (42 residues) | ✅ Complete |
+| `rdc_PAG.tsv` | ¹⁵N-¹H RDCs in PAG medium (23 residues) | ✅ Complete |
+| `rdc_PEG.tsv` | ¹⁵N-¹H RDCs in PEG medium (16 residues) | ✅ Complete |
 | `loss_history.txt` | Per-step loss values from last run | Auto-generated |
 
 ---
@@ -25,32 +25,38 @@
 ## RDC Data
 
 Data provided by **Roberto Tejero, RPI** from the Li et al. (2023) paper.
-Original files (in `2KZV_RDC/`): PALES/DC format, CYANA format, Xplor SANI format.
+Original files (in `2KZV_RDC/`): three formats for the same underlying measurements.
 
 ### What was received
 
-| File | Format | Medium | Residues |
-|---|---|---|---|
-| `2kzv.rdc.media1_DC` | PALES/DC | PAG | 23 (well-defined regions) |
-| `2kzv.rdc.media1_CYANA` | CYANA | PAG | 23 (identical values) |
-| `2kzv.rdc.media2_DC` | PALES/DC | PEG | 16 (well-defined regions) |
-| `2kzv.rdc.media2_CYANA` | CYANA | PEG | 16 (identical values) |
-| `2kzv.rdc.both_Xplor` | Xplor SANI | PAG+PEG | 46+42 (full observed set) |
+| File | Format | Medium | Residues | Use |
+|---|---|---|---|---|
+| `2kzv.rdc.media1_DC` | PALES/DC | PAG | 23 | **TSV source** ✅ |
+| `2kzv.rdc.media1_CYANA` | CYANA | PAG | 23 | Identical values |
+| `2kzv.rdc.media2_DC` | PALES/DC | PEG | 16 | **TSV source** ✅ |
+| `2kzv.rdc.media2_CYANA` | CYANA | PEG | 16 | Identical values |
+| `2kzv.rdc.both_Xplor` | Xplor SANI | PAG+PEG | 46+42 | Not used (see below) |
 
 ### Validation summary
 
-- **DC and CYANA files are 100% consistent** — zero disagreement across all shared residues.
-- **Xplor file is the most complete** (46 PAG + 42 PEG residues vs. 23+16 in DC/CYANA). The DC/CYANA subset covers only the well-defined secondary structure regions used in the original refinement; the Xplor file includes all measurable residues and is used for the TSVs.
-- **Residue numbers are consistent** with PDB 2KZV (chain A, residues 2–84, active range 12–82).
-- **One anomaly**: The Xplor file records `err=2.418 Hz` for media2 (PEG), while the DC/CYANA files record `err=0.418 Hz`. The values themselves are identical. The TSVs use `0.418 Hz` (from DC/CYANA) as the canonical error.
+- **DC and CYANA files are 100% consistent** — zero numerical disagreement across all residues.
+- **TSVs are generated from the DC files** (23 PAG + 16 PEG residues). These are the
+  well-defined secondary structure regions used in the published refinement — using them
+  will reproduce the Table 5 Q-factors exactly.
+- **Xplor file not used**: it contains ~2× as many residues (including disordered/flexible
+  regions not used in refinement), and encodes the PEG error as `2.418 Hz` vs. `0.418 Hz`
+  in the DC/CYANA files (same values, different convention).
+- **Residue numbers match PDB 2KZV** (chain A, active range 14–78).
 
-### Known outliers (PEG medium)
+### Known outlier (PEG medium)
 
-Per Table 5 of Li et al. and confirmed in the data:
-- **Thr14**: D = +11.350 Hz (anomalously large positive, dynamic residue in α-helix)
-- **Ser54**: D = +3.713 Hz (flagged as outlier; present in Xplor full dataset only)
+Per Table 5 of Li et al.:
+- **Thr14**: D = +11.350 Hz in PEG (anomalously large; dynamic α-helix residue).
+  Included in `rdc_PEG.tsv`. To reproduce the paper's parenthetical Q-scores,
+  exclude Thr14 when computing Q-factors.
+- **Ser54**: flagged in the paper but **not present** in the DC/CYANA files — it was
+  excluded from the curated refinement subset and is not in the TSVs.
 
-Both are included in `rdc_PEG.tsv`. To reproduce the paper's parenthetical Q-scores (Table 5), exclude these two residues when computing Q-factors.
 
 ---
 
