@@ -152,10 +152,27 @@ The PEG baseline (0.37) matches the published values almost exactly.
 | Q (PAG, 23 res) | 0.309 | **0.209** | AF2=0.22, NMR=0.18 |
 | Q (PEG, 16 res) | 0.373 | 0.023 | AF2=0.35, NMR=0.36 |
 
-> **Note on PEG**: The PEG medium has only 16 data points vs 5 Saupe tensor
-> parameters — any small structural change that shifts the NH vectors can drive the
-> MSE to near zero for a given fixed tensor. PEG Q values below ~0.15 should be
-> treated with caution; PAG (23 residues) is the more reliable indicator.
+#### Why PEG results are supplementary only
+
+The Saupe alignment tensor has **5 free parameters** ($D_a$, $R$, and 3 Euler angles defining
+orientation). For a reliable tensor determination the data must substantially outnumber
+the parameters (Bax & Tjandra recommend ≥20 RDCs per medium):
+
+| Medium | RDCs | Tensor params | Ratio | Role |
+|---|---|---|---|---|
+| PAG | 23 | 5 | **4.6×** | **Primary benchmark** |
+| PEG | 16 | 5 | **3.2×** | Supplementary only ⚠️ |
+
+With only 16 data points and ~180 backbone torsion parameters available to the optimizer,
+there are many small backbone distortions that can shift the 16 NH vectors to near-zero
+MSE against a fixed tensor — without the structure globally improving. This is a property
+of the dataset (16 is simply too few), not a bug.
+
+**How to read PEG results:** The baseline Q(PEG) = 0.37 is physically meaningful and
+matches the published value. Any final Q(PEG) well below the published NMR target (0.36)
+should be treated as overfitting, not genuine improvement. The benchmark script prints
+an explicit warning when Q drops below half the published target. PAG remains the
+primary numerical indicator of structural improvement.
 
 ---
 

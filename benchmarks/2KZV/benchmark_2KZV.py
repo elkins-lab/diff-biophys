@@ -287,7 +287,12 @@ def make_rdc_fns(
         nh = _nh_vectors(coords)[matched_idx_jax]
         return fit_saupe_tensor(nh, exp_jax, d_max=21.7)  # type: ignore[no-any-return,return-value]
 
-    print(f"  RDC loss: {n_matched} residues matched")
+    # Saupe tensor has 5 free parameters; flag underdetermined media.
+    ratio = n_matched / 5.0
+    status = "✓ adequate" if ratio >= 4.0 else "⚠ underdetermined"
+    print(
+        f"  RDC loss: {n_matched} residues matched  ({ratio:.1f}× overdetermined vs tensor — {status})"
+    )
     return loss_fn, q_eval_fn, make_tensor_fn, n_matched
 
 
@@ -434,12 +439,24 @@ def run_benchmark(
             q_before = float(q_eval_fn(init_coords_final))
             q_after = float(q_eval_fn(final_coords))
             pub = PUBLISHED.get(label, {})
-            print(f"\n  RDC Q ({label}, {n_rdc} residues)")
+            ratio = n_rdc / 5.0
+            primary = label == "rdc_PAG"  # PAG is the primary benchmark metric
+            tag = " [PRIMARY]" if primary else " [supplementary]"
+            print(f"\n  RDC Q ({label}, {n_rdc} residues, {ratio:.1f}× overdetermined){tag}")
             print(f"    before : {q_before:.4f}")
             print(f"    after  : {q_after:.4f}")
             print(f"    Δ Q    : {q_before - q_after:+.4f}")
             if pub:
                 print(f"    published AF2 Q = {pub['af2']:.2f}  |  NMR medoid Q = {pub['nmr']:.2f}")
+            # Warn when Q is implausibly below the published target
+            if pub and q_after < pub["nmr"] * 0.5:
+                print(
+                    f"    ⚠  Q after ({q_after:.3f}) is well below the published NMR target "
+                    f"({pub['nmr']:.2f}), indicating overfitting. "
+                    f"With only {n_rdc} RDCs ({ratio:.1f}× the tensor's 5 free parameters), "
+                    "this medium is too data-sparse to constrain the backbone reliably. "
+                    "Treat this result as supplementary only."
+                )
 
     np.savetxt(BENCH_DIR / "loss_history.txt", history, header="total_loss per step", comments="# ")
     print("\n  Loss history saved to: loss_history.txt")
