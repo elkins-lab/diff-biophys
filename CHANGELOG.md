@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-17
+
+### Added
+- **Benchmarking Suite**: Validated `diff-biophys` against experimental NMR data for proteins 2KZV and GmR58A (Li et al. 2023).
+- **Refinement Factories**: New high-level APIs `make_rdc_refinement_fns` and `make_ca_shift_loss` to simplify experimental data integration.
+- **Robust Backbone I/O**: Direct support for loading PDB models and extracting N–CA–C coordinates into JAX arrays via `biotite`.
+- **Edge Case Test Suite**: Comprehensive tests for numerical singularities (CD), collinearity (Kabsch), and empty input handling.
+
+### Fixed
+- **RDC Overfitting**: Implemented fixed-tensor refinement (periodically updated) to prevent trivial Q-factor minimization.
+- **NH Bond Reconstruction**: Improved peptide-plane bisector method for more accurate NH vector orientations from backbone coordinates.
+- **Test Coverage**: Achieved 100% coverage across all core biophysical modules.
+
 ## [0.1.6] - 2026-06-14
 
 ### Fixed

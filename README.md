@@ -213,6 +213,6 @@ MIT License — see [LICENSE](LICENSE) for details.
   title   = {diff-biophys: Differentiable biophysics kernels for JAX},
   year    = {2026},
   url     = {https://github.com/elkins-lab/diff-biophys},
-  version = {0.1.6}
+  version = {0.2.0}
 }
 ```
