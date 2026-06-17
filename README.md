@@ -56,15 +56,18 @@ Protein conformational space is notoriously **rugged**, filled with countless lo
 ### 1. The Local Minimum Problem
 Because gradient descent (the core of this library) follows the mathematically steepest path, it will always slide into the nearest "valley." If your starting structure is very far from the correct fold (e.g., a random string of atoms), the optimizer may get stuck in a physically impossible or non-native local minimum.
 
-### 2. The "Experimental Funnel"
+### 2. The Need for Structural Priors (Preventing Overfitting)
+`diff-biophys` is a library of **differentiable experimental observables**, not a full molecular dynamics forcefield (like Amber or CHARMM). It does not natively calculate Van der Waals repulsions (steric clashes), hydrogen bond networks, or Ramachandran plot probabilities. If you run gradient descent using *only* experimental losses (like RDCs or SAXS) on an underdetermined system, the optimizer will happily smash atoms through each other to perfectly fit the data—resulting in extreme mathematical overfitting. To maintain physical realism, the library assumes you will pair its experimental losses with some form of **structural prior**, such as a simple harmonic restraint on the backbone, a differentiable molecular mechanics penalty, or by fine-tuning an AI folding model that already "knows" what a protein looks like.
+
+### 3. The "Experimental Funnel"
 Differentiable physics is most powerful when combined with **experimental data (RDCs, SAXS, FSC)**. These observables act like a "global gravitational pull." Because a SAXS curve or an RDC depends on the *entire* shape of the molecule, they create a much wider and smoother "basin of attraction" than pure physical forces (like hydrogen bonds), helping the optimizer cross small physical "bumps" in the landscape.
 
-### 3. The Recommended Hybrid Workflow
+### 4. The Recommended Hybrid Workflow
 For complex proteins, we do not recommend "folding from scratch." Instead, use a **Hybrid Refinement** strategy:
 1. **Initial State:** Use **AlphaFold** or **synth-pdb** to generate a "physically plausible" starting structure that is in the correct global neighborhood.
 2. **Gradient Descent:** Use **diff-biophys** to surgically "slide" that structure down the final few inches to match the exact experimental solution data.
 
-### 4. What is "Adam"?
+### 5. What is "Adam"?
 In our tutorials, we use an optimizer called **Adam** (Adaptive Moment Estimation). Think of it as "gradient descent with memory and friction." Unlike a simple ball rolling down a hill, Adam:
 - **Momentum:** Remembers its previous speed to help roll over small local dips.
 - **Adaptive Steps:** Automatically slows down in steep areas and speeds up in flat plains, making it much more robust than standard gradient descent.
