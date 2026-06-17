@@ -14,7 +14,7 @@
 |---|---|---|
 | `2KZV.pdb` | NMR ensemble (20 models) from RCSB | ⬇️ Run `fetch_data.py` |
 | `bmrb17020.str` | NMR-STAR v3 file (chem. shifts + NOESY) from BMRB | ⬇️ Run `fetch_data.py` |
-| `parse_bmrb.py` | Parser: extracts Cα/N/HN shifts | ✅ Ready |
+| `parse_bmrb.py` | Parser: extracts Cα/N/HN shifts and RDC tables | ✅ Ready |
 | `benchmark_2KZV.py` | Main benchmark script | ✅ Ready |
 | `rdc_PAG.tsv` | ¹⁵N-¹H RDCs in PAG medium (23 residues) | ✅ Complete |
 | `rdc_PEG.tsv` | ¹⁵N-¹H RDCs in PEG medium (16 residues) | ✅ Complete |
@@ -57,7 +57,6 @@ Per Table 5 of Li et al.:
 - **Ser54**: flagged in the paper but **not present** in the DC/CYANA files — it was
   excluded from the curated refinement subset and is not in the TSVs.
 
-
 ---
 
 ## Quick Start
@@ -67,13 +66,16 @@ Per Table 5 of Li et al.:
 python fetch_data.py
 
 # Phase 1: Cα shifts only
-python benchmark_2KZV.py --steps 300
+python benchmark_2KZV.py --steps 500
 
-# Phase 2: Cα shifts + PAG RDCs
-python benchmark_2KZV.py --rdc rdc_PAG.tsv --steps 500 --w-ca 0.5 --w-rdc 1.0
+# Phase 2: Cα shifts + PAG RDCs only
+python benchmark_2KZV.py --rdc rdc_PAG.tsv --steps 500
 
-# Phase 2: Cα shifts + both media
+# Phase 2: Cα shifts + both media (recommended)
 python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv --steps 500
+
+# Control how often the alignment tensor is re-fit (default every 500 steps)
+python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv --steps 2000 --tensor-update-interval 200
 ```
 
 ---
@@ -81,30 +83,79 @@ python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv --steps 500
 ## Benchmark Design
 
 ### Phase 1: Cα Chemical Shift Refinement
+
 Uses `diff_biophys.nmr.chemical_shifts.predict_ca_shifts` against 91 measured Cα shifts from BMRB 17020.
 
-**Phase 1 results (300 steps):**
+**Phase 1 results (500 steps from NMR model 1):**
 
 | | Cα RMSD (ppm) |
 |---|---|
 | NMR model 1 (before) | 1.542 |
-| After refinement | 1.356 |
-| Improvement | **+0.186 ppm** |
+| After refinement | ~1.43 |
+| Improvement | **~+0.11 ppm** |
 
-### Phase 2: RDC Q-factor Refinement
+### Phase 2: RDC Refinement
 
-Uses `diff_biophys.nmr.rdc.fit_saupe_tensor` + `calculate_rdc_from_tensor` against ¹⁵N-¹H RDCs.
+Uses `diff_biophys.nmr.rdc` against ¹⁵N-¹H RDCs in PAG and PEG alignment media.
 
-**Published benchmarks (Table 5 of Li et al.):**
+#### NH bond vector reconstruction
 
-| Model | Medium | r² | Q1 | Q2 |
-|---|---|---|---|---|
-| AF2 Model 1 | PAG | 0.92 | 0.22 | 0.21 |
-| NMR medoid  | PAG | 0.95 | **0.18** ← target | 0.16 |
-| AF2 Model 1 | PEG | 0.82 (0.88) | 0.35 (0.24) | 0.38 (0.25) |
-| NMR medoid  | PEG | 0.82 (0.91) | **0.36 (0.20)** ← target | 0.36 (0.18) |
+Amide H positions are reconstructed from the N-CA-C backbone using peptide-plane
+geometry: H lies in the C(i−1)–N–CA plane, anti-parallel to the bisector of the
+N→CA and N→C(i−1) unit vectors, placing H at ~119° from each bond. This gives
+physically correct NH bond vectors without explicit H coordinates.
 
-Values in parentheses exclude Thr14 and Ser54.
+#### Alignment tensor strategy (fixed-tensor refinement)
+
+The Saupe alignment tensor (5 free parameters per medium) is **not** differentiated
+through during optimization. Instead:
+
+1. The tensor is fit to the current structure at the start and every
+   `--tensor-update-interval` steps (default 500).
+2. During gradient descent, `jax.lax.stop_gradient` blocks gradients from flowing
+   through the tensor — the gradient sees only the backbone coordinates.
+3. Q-factors printed during optimization are computed with a fresh tensor fit
+   (best-achievable Q for monitoring), separate from the fixed-tensor loss.
+
+This is the standard approach used in X-PLOR/CNS and PALES: the tensor is held
+fixed during each conjugate-gradient cycle. Without it, the optimizer trivially
+drives Q→0 by finding orientations that any tensor can fit — the system is
+severely underdetermined (5 tensor params vs 16–23 data points).
+
+#### Published benchmarks (Table 5 of Li et al.)
+
+| Model | Medium | r² | Q-factor |
+|---|---|---|---|
+| AF2 Model 1 | PAG | 0.92 | 0.22 |
+| NMR medoid  | PAG | 0.95 | **0.18** ← target |
+| AF2 Model 1 | PEG | 0.82 (0.88*) | 0.35 (0.24*) |
+| NMR medoid  | PEG | 0.82 (0.91*) | **0.36 (0.20*)** ← target |
+
+*Parenthetical values exclude Thr14 (and Ser54 where applicable).
+
+#### Baseline Q-factors from NMR model 1 (before any refinement)
+
+| Medium | Residues | Baseline Q | Published target |
+|---|---|---|---|
+| PAG | 23 | 0.31 | 0.18 (NMR medoid) |
+| PEG | 16 | 0.37 | 0.36 (NMR medoid) |
+
+The PAG baseline (0.31) is higher than the published NMR medoid (0.18) because
+model 1 of the ensemble is not the best-fitting conformer — the medoid is.
+The PEG baseline (0.37) matches the published values almost exactly.
+
+#### Results (500 steps, both media, NMR model 1)
+
+| | Before | After | Published target |
+|---|---|---|---|
+| Cα RMSD | 1.542 ppm | 1.496 ppm | — |
+| Q (PAG, 23 res) | 0.309 | **0.209** | AF2=0.22, NMR=0.18 |
+| Q (PEG, 16 res) | 0.373 | 0.023 | AF2=0.35, NMR=0.36 |
+
+> **Note on PEG**: The PEG medium has only 16 data points vs 5 Saupe tensor
+> parameters — any small structural change that shifts the NH vectors can drive the
+> MSE to near zero for a given fixed tensor. PEG Q values below ~0.15 should be
+> treated with caution; PAG (23 residues) is the more reliable indicator.
 
 ---
 
@@ -113,7 +164,7 @@ Values in parentheses exclude Thr14 and Ser54.
 | Observable | diff-biophys function |
 |---|---|
 | Cα chemical shifts | `diff_biophys.nmr.chemical_shifts.predict_ca_shifts` |
-| RDC (general tensor) | `diff_biophys.nmr.rdc.calculate_rdc_from_tensor` |
+| RDC back-calculation | `diff_biophys.nmr.rdc.calculate_rdc_from_tensor` |
 | Alignment tensor fit | `diff_biophys.nmr.rdc.fit_saupe_tensor` |
 | Q-factor | `diff_biophys.nmr.rdc.calculate_q_factor` |
 | Backbone builder | `diff_biophys.geometry.nerf.chain_nerf` |
