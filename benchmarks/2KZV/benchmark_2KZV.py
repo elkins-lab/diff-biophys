@@ -18,11 +18,13 @@ Observables used:
               PEG: AF2=0.35 (0.24*)  NMR medoid=0.36 (0.20*)
               * excluding Thr14 outlier
 
-Benchmark design:
-  1. Load PDB 2KZV NMR model (default: model 1).
-  2. Apply gradient descent using diff_biophys.nmr.chemical_shifts and/or
-     diff_biophys.nmr.rdc as loss functions.
-  3. Report Q-factor per medium and Cα RMSD before and after refinement.
+RDC refinement design (fixed-tensor approach):
+  The Saupe alignment tensor is fit once to the current structure, then
+  held FIXED during gradient descent (jax.lax.stop_gradient). This prevents
+  the optimizer from driving Q→0 by learning to fool the tensor fit.
+  The tensor is re-fit every --tensor-update-interval steps (default 500).
+  Q-factors reported during optimization are computed with a fresh tensor
+  fit (best-achievable Q), for honest monitoring.
 
 Usage:
     # Phase 1: chemical shifts only
@@ -34,8 +36,8 @@ Usage:
     # Phase 2: both media simultaneously (recommended)
     python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv
 
-    # Tune weights
-    python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv --w-ca 0.5 --w-rdc 1.0
+    # Control tensor update frequency
+    python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv --tensor-update-interval 200
 """
 
 import argparse
@@ -79,6 +81,12 @@ COMPARISON_RANGE = set(
     + list(range(73, 81))
 )
 
+# Published Q-factors (Table 5, Li et al. 2023)
+PUBLISHED = {
+    "rdc_PAG": {"af2": 0.22, "nmr": 0.18},
+    "rdc_PEG": {"af2": 0.35, "nmr": 0.36},
+}
+
 # Ideal backbone geometry (standard NERF values)
 CA_C_LENGTH = 1.525
 C_N_LENGTH = 1.329
@@ -95,7 +103,6 @@ def get_backbone_coords(struct: struc.AtomArray) -> jnp.ndarray:  # type: ignore
     """Extract N–CA–C backbone coordinates (3N × 3) in N-CA-C order."""
     mask = np.isin(struct.atom_name, ["N", "CA", "C"])
     backbone = struct[mask]
-    # Sort within each residue: N < CA < C
     order = {"N": 0, "CA": 1, "C": 2}
     sort_key = np.array([order[a] for a in backbone.atom_name])
     res_ids = backbone.res_id
@@ -106,7 +113,6 @@ def get_backbone_coords(struct: struc.AtomArray) -> jnp.ndarray:  # type: ignore
 def load_pdb_model(path: Path, model_id: int = 1) -> struc.AtomArray:  # type: ignore[return]
     f = pdb_io.PDBFile.read(str(path))
     stack = f.get_structure()
-    # stack is AtomArrayStack; index by model
     return stack[model_id - 1]
 
 
@@ -123,7 +129,6 @@ def get_residue_info(struct: struc.AtomArray) -> tuple[np.ndarray, np.ndarray]:
 def compute_phi_psi(coords: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray]:  # type: ignore[return]
     """Extract φ/ψ from N-CA-C backbone coordinates."""
     d = compute_dihedrals(coords)
-    # Pattern: psi[i]=d[3i], omega[i]=d[3i+1], phi[i+1]=d[3i+2]
     psi = d[0::3]
     phi = d[2::3]
     n_res = coords.shape[0] // 3
@@ -158,18 +163,12 @@ def make_ca_shift_loss(
     struct_res_ids: np.ndarray,
     struct_res_names: list[str],
 ) -> tuple[Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray], int]:
-    """
-    Build a JAX-differentiable Cα shift RMSD loss.
-
-    Returns a function: (phi, psi) → scalar RMSD (ppm).
-    Also returns the rc_shifts array and residue mask.
-    """
-    # Map BMRB res_ids → structure indices
+    """Build a JAX-differentiable Cα shift RMSD loss: (phi, psi) → scalar RMSD."""
     res_id_to_idx = {rid: i for i, rid in enumerate(struct_res_ids)}
 
-    matched_idx = []  # indices into struct
-    matched_exp = []  # experimental Cα shifts
-    matched_names = []  # 3-letter codes for RC lookup
+    matched_idx: list[int] = []
+    matched_exp: list[float] = []
+    matched_names: list[str] = []
 
     for i, rid in enumerate(exp_res_ids):
         if rid in res_id_to_idx:
@@ -181,14 +180,12 @@ def make_ca_shift_loss(
     if not matched_idx:
         raise ValueError("No residues matched between BMRB and PDB.")
 
-    # Random-coil shifts for matched residues
     rc = np.array([RANDOM_COIL_CA.get(name, 55.0) for name in matched_names], dtype=np.float32)
     rc_jax = jnp.array(rc)
     exp_jax = jnp.array(matched_exp, dtype=jnp.float32)
     idx_jax = jnp.array(matched_idx, dtype=jnp.int32)
 
     def loss_fn(phi: jnp.ndarray, psi: jnp.ndarray) -> jnp.ndarray:
-        # Select matched residue torsions
         phi_m = phi[idx_jax]
         psi_m = psi[idx_jax]
         pred = predict_ca_shifts(phi_m, psi_m, rc_jax)
@@ -204,19 +201,35 @@ def make_ca_shift_loss(
 # ── Observable: ¹⁵N-¹H RDCs ─────────────────────────────────────────────────
 
 
-def make_rdc_loss(
-    rdc_data: dict[str, np.ndarray], struct_res_ids: np.ndarray
-) -> tuple[Callable[[jnp.ndarray], jnp.ndarray], jnp.ndarray]:
+def make_rdc_fns(
+    rdc_data: dict[str, np.ndarray],
+    struct_res_ids: np.ndarray,
+) -> tuple[
+    Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],  # fixed-tensor loss
+    Callable[[jnp.ndarray], jnp.ndarray],  # Q evaluator (monitoring)
+    Callable[[jnp.ndarray], jnp.ndarray],  # tensor fitter
+    int,  # n_matched
+]:
     """
-    Build a JAX-differentiable RDC Q-factor loss for the given medium.
-    Uses fit_saupe_tensor (SVD) to find the best alignment tensor each step.
+    Build three functions for RDC-based refinement:
 
-    Returns a function: (coords) → scalar Q-factor.
+      loss_fn(coords, fixed_tensor) → scalar MSE loss
+          Gradient flows through coords only; the tensor is blocked via
+          stop_gradient. This prevents the optimizer from driving Q→0 by
+          distorting the structure to match any tensor.
+
+      q_eval_fn(coords) → scalar Q-factor
+          Re-fits the Saupe tensor and returns the best-achievable Q.
+          Used ONLY for monitoring — never called inside a gradient.
+
+      make_tensor_fn(coords) → Saupe tensor (5,)
+          Fit the alignment tensor to the current structure.
+          Call this outside of jit to update the fixed tensor periodically.
     """
     res_id_to_idx = {rid: i for i, rid in enumerate(struct_res_ids)}
 
-    matched_idx = []
-    matched_rdc = []
+    matched_idx: list[int] = []
+    matched_rdc: list[float] = []
     for i, rid in enumerate(rdc_data["res_id"]):
         if rid in res_id_to_idx:
             matched_idx.append(res_id_to_idx[int(rid)])
@@ -226,67 +239,56 @@ def make_rdc_loss(
         raise ValueError("No RDC residues matched PDB sequence.")
 
     exp_jax = jnp.array(matched_rdc, dtype=jnp.float32)
+    matched_idx_jax = jnp.array(matched_idx, dtype=jnp.int32)
+    n_matched = len(matched_idx)
 
-    def get_nh_vectors(coords: jnp.ndarray) -> jnp.ndarray:
-        """Reconstruct amide N–H bond unit vectors from N-CA-C backbone.
+    def _nh_vectors(coords: jnp.ndarray) -> jnp.ndarray:
+        """Reconstruct amide N–H unit vectors using peptide-plane geometry.
 
-        The amide H lies in the peptide plane defined by C(i-1), N(i), CA(i),
-        at a fixed bond angle of ~119° from the N(i)-CA(i) bond.
-
-        Layout: coords = [N0, CA0, C0, N1, CA1, C1, ...]
-          N(i)    = coords[3i]
-          CA(i)   = coords[3i+1]
-          C(i-1)  = coords[3i-1]  (for i >= 1)
-
-        For residue 0 (no preceding C), fall back to the N-CA direction
-        (this residue is almost never in the RDC set anyway).
+        H lies in the C(i-1)–N–CA plane, anti-parallel to the bisector of
+        the N→CA and N→C(i-1) unit vectors (placing H at ~119° from each).
         """
-        n_atoms = coords[0::3]  # (N_res, 3)
-        ca_atoms = coords[1::3]  # (N_res, 3)
-        c_atoms = coords[2::3]  # (N_res, 3)
+        n_atoms = coords[0::3]
+        ca_atoms = coords[1::3]
+        c_atoms = coords[2::3]
 
-        # Unit vector N→CA  (needed for angle placement)
-        n_to_ca = ca_atoms - n_atoms  # (N_res, 3)
+        n_to_ca = ca_atoms - n_atoms
         n_to_ca = n_to_ca / jnp.maximum(jnp.linalg.norm(n_to_ca, axis=-1, keepdims=True), 1e-8)
 
-        # Unit vector N→C(i-1):  C(i-1) = c_atoms[i-1]
-        # For i=0, use a dummy direction (will be masked or unused)
-        c_prev = jnp.concatenate([c_atoms[:1], c_atoms[:-1]], axis=0)  # (N_res, 3)
+        c_prev = jnp.concatenate([c_atoms[:1], c_atoms[:-1]], axis=0)
         n_to_cprev = c_prev - n_atoms
         n_to_cprev = n_to_cprev / jnp.maximum(
             jnp.linalg.norm(n_to_cprev, axis=-1, keepdims=True), 1e-8
         )
 
-        # H lies in the C(i-1)-N-CA plane.
-        # Bisector of C(i-1)-N and CA-N bonds (both pointing away from N)
-        # then flip: H is on the opposite side of N from the bisector.
-        # H direction ≈ -(n_to_ca + n_to_cprev) / |...|
-        # This places H at ~119° from both N-CA and N-C(i-1) bonds.
-        bisector = n_to_ca + n_to_cprev  # (N_res, 3)
-        bisector_norm = jnp.linalg.norm(bisector, axis=-1, keepdims=True)
-        bisector = bisector / jnp.maximum(bisector_norm, 1e-8)
+        bisector = n_to_ca + n_to_cprev
+        bisector = bisector / jnp.maximum(jnp.linalg.norm(bisector, axis=-1, keepdims=True), 1e-8)
+        nh = -bisector
+        # Residue 0 fallback (no C(i-1) available; rarely in RDC set)
+        nh = jnp.concatenate([-n_to_ca[:1], nh[1:]], axis=0)
+        return nh
 
-        # NH points anti-parallel to the bisector
-        nh = -bisector  # (N_res, 3)
+    def loss_fn(coords: jnp.ndarray, fixed_tensor: jnp.ndarray) -> jnp.ndarray:
+        """Fixed-tensor MSE loss. Gradient flows through coords only."""
+        tensor = jax.lax.stop_gradient(fixed_tensor)
+        nh = _nh_vectors(coords)[matched_idx_jax]
+        calc = calculate_rdc_from_tensor(nh, tensor, d_max=21.7)
+        return jnp.mean((calc - exp_jax) ** 2)
 
-        # Residue 0 fallback: use N-CA direction (no C(i-1) available)
-        nh_r0 = -n_to_ca[:1]
-        nh = jnp.concatenate([nh_r0, nh[1:]], axis=0)
-
-        return nh  # (N_res, 3)  — already unit vectors
-
-    matched_idx_jax = jnp.array(matched_idx, dtype=jnp.int32)
-
-    def loss_fn(coords: jnp.ndarray) -> jnp.ndarray:
-        all_nh = get_nh_vectors(coords)  # (N_res, 3)
-        nh_matched = all_nh[matched_idx_jax]  # (N_matched, 3)
-        # Fit Saupe tensor (differentiable via SVD)
-        tensor = fit_saupe_tensor(nh_matched, exp_jax, d_max=21.7)  # ¹⁵N-¹H d_max
-        calc = calculate_rdc_from_tensor(nh_matched, tensor, d_max=21.7)
+    def q_eval_fn(coords: jnp.ndarray) -> jnp.ndarray:
+        """Re-fit tensor and return honest Q-factor (monitoring only)."""
+        nh = _nh_vectors(coords)[matched_idx_jax]
+        tensor = fit_saupe_tensor(nh, exp_jax, d_max=21.7)
+        calc = calculate_rdc_from_tensor(nh, tensor, d_max=21.7)
         return calculate_q_factor(calc, exp_jax)  # type: ignore[no-any-return,return-value]
 
-    print(f"  RDC loss: {len(matched_idx)} residues matched")
-    return loss_fn, exp_jax
+    def make_tensor_fn(coords: jnp.ndarray) -> jnp.ndarray:
+        """Fit and return the Saupe tensor for the given coords."""
+        nh = _nh_vectors(coords)[matched_idx_jax]
+        return fit_saupe_tensor(nh, exp_jax, d_max=21.7)  # type: ignore[no-any-return,return-value]
+
+    print(f"  RDC loss: {n_matched} residues matched")
+    return loss_fn, q_eval_fn, make_tensor_fn, n_matched
 
 
 # ── Main benchmark ───────────────────────────────────────────────────────────
@@ -299,6 +301,7 @@ def run_benchmark(
     lr: float = 0.01,
     w_ca: float = 1.0,
     w_rdc: float = 1.0,
+    tensor_update_interval: int = 500,
 ) -> tuple[list[float], tuple[jnp.ndarray, jnp.ndarray]]:
     print("diff-biophys Benchmark: 2KZV (CvR118A, BMRB 17020)")
     print("Li, Spaman, Tejero, Montelione et al. (PMID 37257257)")
@@ -312,16 +315,14 @@ def run_benchmark(
     print(f"    {n_residues} residues (res_id {res_ids[0]}–{res_ids[-1]})")
 
     coords = get_backbone_coords(struct)
-    seed_coords = coords[:3]  # N0, CA0, C0 — anchors global frame
+    seed_coords = coords[:3]
     build_structure = make_builder(n_residues, seed_coords)
 
-    # Extract initial torsions from the NMR structure
     init_phi, init_psi = compute_phi_psi(coords)
 
     # ── Load experimental data ───────────────────────────────────────────────
     print("\n[2] Loading experimental data...")
 
-    # Chemical shifts
     bmrb_data = load_bmrb_shifts(BMRB_PATH)
     ca_exp = bmrb_data.get("CA", {})
     if not ca_exp:
@@ -330,8 +331,8 @@ def run_benchmark(
         ca_exp["res_id"], ca_exp["shift"], res_ids, list(res_names)
     )
 
-    # RDCs (optional, Phase 2) — one loss function per medium, summed during optimisation
-    rdc_loss_fns: list[tuple[str, Callable[[jnp.ndarray], jnp.ndarray], int]] = []
+    # RDC entries: (label, loss_fn, q_eval_fn, make_tensor_fn, n_rdc)
+    rdc_entries: list[tuple[str, Callable, Callable, Callable, int]] = []
     for rdc_path in rdc_paths or []:
         rdc_all = load_rdc_table(rdc_path)
         if not rdc_all:
@@ -339,34 +340,46 @@ def run_benchmark(
             continue
         medium = list(rdc_all.keys())[0]
         print(f"  RDC medium '{medium}' from {rdc_path.name}")
-        loss_fn, _ = make_rdc_loss(rdc_all[medium], res_ids)
-        n_rdc = len(rdc_all[medium]["res_id"])
-        rdc_loss_fns.append((rdc_path.stem, loss_fn, n_rdc))
+        loss_fn, q_eval_fn, make_tensor_fn, n_rdc = make_rdc_fns(rdc_all[medium], res_ids)
+        rdc_entries.append((rdc_path.stem, loss_fn, q_eval_fn, make_tensor_fn, n_rdc))
 
-    # ── Compute baseline scores ──────────────────────────────────────────────
+    # ── Baseline scores ──────────────────────────────────────────────────────
     print(f"\n[3] Baseline scores (NMR structure, model {start_model})...")
     init_ca_rmsd = float(ca_loss_fn(init_phi, init_psi))
     print(f"    Cα shift RMSD : {init_ca_rmsd:.3f} ppm  ({n_ca} residues)")
 
-    if rdc_loss_fns:
-        init_coords = build_structure(init_phi, init_psi)
-        for label, loss_fn, n_rdc in rdc_loss_fns:
-            init_q = float(loss_fn(init_coords))
+    init_coords = build_structure(init_phi, init_psi)
+
+    # Fit initial alignment tensors (one per medium)
+    tensors: list[jnp.ndarray] = [
+        make_tensor_fn(init_coords) for _, _, _, make_tensor_fn, _ in rdc_entries
+    ]
+
+    if rdc_entries:
+        for (label, _, q_eval_fn, _, n_rdc), _t in zip(rdc_entries, tensors, strict=False):
+            init_q = float(q_eval_fn(init_coords))
             print(f"    RDC Q ({label:12s}): {init_q:.4f}  ({n_rdc} residues)")
 
-    # ── Combined loss function ───────────────────────────────────────────────
+    # ── Combined loss (fixed-tensor RDC + Cα shifts) ─────────────────────────
+    # tensors is a Python list captured by reference; updates outside jit are visible.
     @jax.jit
-    def total_loss(params: tuple[jnp.ndarray, jnp.ndarray]) -> jnp.ndarray:
+    def total_loss(
+        params: tuple[jnp.ndarray, jnp.ndarray],
+        current_tensors: list[jnp.ndarray],
+    ) -> jnp.ndarray:
         phi, psi = params
         loss = w_ca * ca_loss_fn(phi, psi)
-        if rdc_loss_fns:
-            coords = build_structure(phi, psi)
-            for _, loss_fn, _ in rdc_loss_fns:
-                loss = loss + w_rdc * loss_fn(coords)
+        if rdc_entries:
+            c = build_structure(phi, psi)
+            for (_, rdc_loss, _, _, _), t in zip(rdc_entries, current_tensors, strict=False):
+                loss = loss + w_rdc * rdc_loss(c, t)
         return loss
 
     # ── Optimization ─────────────────────────────────────────────────────────
-    print(f"\n[4] Optimizing ({n_steps} steps, lr={lr})...")
+    print(
+        f"\n[4] Optimizing ({n_steps} steps, lr={lr}"
+        + (f", tensor updated every {tensor_update_interval} steps)" if rdc_entries else ")")
+    )
     optimizer = optax.adam(learning_rate=lr)
     params = (init_phi, init_psi)
     opt_state = optimizer.init(params)
@@ -374,24 +387,33 @@ def run_benchmark(
 
     @jax.jit
     def step(
-        params: tuple[jnp.ndarray, jnp.ndarray], opt_state: optax.OptState
+        params: tuple[jnp.ndarray, jnp.ndarray],
+        opt_state: optax.OptState,
+        current_tensors: list[jnp.ndarray],
     ) -> tuple[tuple[jnp.ndarray, jnp.ndarray], optax.OptState, jnp.ndarray]:
-        loss, grads = jax.value_and_grad(total_loss)(params)
-        updates, opt_state = optimizer.update(grads, opt_state)
-        params = optax.apply_updates(params, updates)
-        return params, opt_state, loss
+        loss, grads = jax.value_and_grad(total_loss, argnums=0)(params, current_tensors)
+        updates, new_opt_state = optimizer.update(grads, opt_state)
+        new_params = optax.apply_updates(params, updates)
+        return new_params, new_opt_state, loss
 
     for i in range(n_steps + 1):
-        params, opt_state, loss = step(params, opt_state)
+        # Periodically re-fit alignment tensors outside the gradient
+        if i > 0 and rdc_entries and i % tensor_update_interval == 0:
+            phi_u, psi_u = params
+            cur_coords = build_structure(phi_u, psi_u)
+            tensors = [make_tensor_fn(cur_coords) for _, _, _, make_tensor_fn, _ in rdc_entries]
+
+        params, opt_state, loss = step(params, opt_state, tensors)
         history.append(float(loss))
+
         if i % 100 == 0:
             phi_r, psi_r = params
             ca_rmsd = float(ca_loss_fn(phi_r, psi_r))
             line = f"  Step {i:4d} | total loss={float(loss):.4f} | Cα RMSD={ca_rmsd:.3f} ppm"
-            if rdc_loss_fns:
+            if rdc_entries:
                 mid_coords = build_structure(phi_r, psi_r)
-                for label, loss_fn, _ in rdc_loss_fns:
-                    q = float(loss_fn(mid_coords))
+                for label, _, q_eval_fn, _, _ in rdc_entries:
+                    q = float(q_eval_fn(mid_coords))
                     line += f" | Q({label})={q:.4f}"
             print(line)
 
@@ -399,23 +421,18 @@ def run_benchmark(
     final_phi, final_psi = params
     final_ca_rmsd = float(ca_loss_fn(final_phi, final_psi))
 
-    PUBLISHED = {
-        "rdc_PAG": {"af2": 0.22, "nmr": 0.18},
-        "rdc_PEG": {"af2": 0.35, "nmr": 0.36},
-    }
-
     print("\n[5] Results summary")
     print("=" * 65)
     print(f"  Cα shift RMSD  before: {init_ca_rmsd:.3f} ppm")
     print(f"  Cα shift RMSD  after : {final_ca_rmsd:.3f} ppm")
     print(f"  Δ Cα RMSD            : {init_ca_rmsd - final_ca_rmsd:+.3f} ppm")
 
-    if rdc_loss_fns:
+    if rdc_entries:
         init_coords_final = build_structure(init_phi, init_psi)
         final_coords = build_structure(final_phi, final_psi)
-        for label, loss_fn, n_rdc in rdc_loss_fns:
-            q_before = float(loss_fn(init_coords_final))
-            q_after = float(loss_fn(final_coords))
+        for label, _, q_eval_fn, _, n_rdc in rdc_entries:
+            q_before = float(q_eval_fn(init_coords_final))
+            q_after = float(q_eval_fn(final_coords))
             pub = PUBLISHED.get(label, {})
             print(f"\n  RDC Q ({label}, {n_rdc} residues)")
             print(f"    before : {q_before:.4f}")
@@ -424,7 +441,6 @@ def run_benchmark(
             if pub:
                 print(f"    published AF2 Q = {pub['af2']:.2f}  |  NMR medoid Q = {pub['nmr']:.2f}")
 
-    # Save history
     np.savetxt(BENCH_DIR / "loss_history.txt", history, header="total_loss per step", comments="# ")
     print("\n  Loss history saved to: loss_history.txt")
 
@@ -439,9 +455,10 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python benchmark_2KZV.py                              # Phase 1: Ca shifts only\n"
-            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv           # + PAG RDCs\n"
-            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv  # both media\n"
+            "  python benchmark_2KZV.py                                      # Ca shifts only\n"
+            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv                   # + PAG RDCs\n"
+            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv      # both media\n"
+            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv --tensor-update-interval 200\n"
         ),
     )
     parser.add_argument(
@@ -469,7 +486,13 @@ if __name__ == "__main__":
         "--w-rdc",
         type=float,
         default=1.0,
-        help="Weight for RDC Q-factor loss per medium (default 1.0)",
+        help="Weight for RDC MSE loss per medium (default 1.0)",
+    )
+    parser.add_argument(
+        "--tensor-update-interval",
+        type=int,
+        default=500,
+        help="Re-fit alignment tensors every N steps (default 500; 0 = never update)",
     )
     args = parser.parse_args()
 
@@ -480,4 +503,5 @@ if __name__ == "__main__":
         lr=args.lr,
         w_ca=args.w_ca,
         w_rdc=args.w_rdc,
+        tensor_update_interval=args.tensor_update_interval,
     )
