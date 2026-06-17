@@ -115,6 +115,7 @@ exclude = ["build/", "dist/", "scratch/", "site/"]
 
 [[tool.mypy.overrides]]
 module = [
+    "biotite.*",
     "jax.*",
     "jaxlib.*",
     "numpy.*",
