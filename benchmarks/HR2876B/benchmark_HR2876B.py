@@ -64,6 +64,7 @@ def run_benchmark(
     lr: float = 0.01,
     w_ca: float = 1.0,
     w_rdc: float = 1.0,
+    w_restraint: float = 0.0,
     tensor_update_interval: int = 500,
 ) -> tuple[list[float], tuple[jnp.ndarray, jnp.ndarray]]:
     print("diff-biophys Benchmark: HR2876B (PDB 2LTM, BMRB 18489)")
@@ -147,6 +148,13 @@ def run_benchmark(
     ) -> jnp.ndarray:
         phi, psi = params
         loss = w_ca * ca_loss_fn(phi, psi)
+
+        # Harmonic restraint to prevent overfitting (penalize deviation from initial structure)
+        if w_restraint > 0.0:
+            loss = loss + w_restraint * (
+                jnp.mean((phi - init_phi) ** 2) + jnp.mean((psi - init_psi) ** 2)
+            )
+
         if rdc_entries:
             c = build_structure(phi, psi)
             for (_, rdc_loss, _, _, _), t in zip(rdc_entries, current_tensors, strict=False):
@@ -254,6 +262,12 @@ if __name__ == "__main__":
     parser.add_argument("--w-ca", type=float, default=1.0, help="Cα shift weight (default 1.0)")
     parser.add_argument("--w-rdc", type=float, default=1.0, help="RDC weight (default 1.0)")
     parser.add_argument(
+        "--w-restraint",
+        type=float,
+        default=0.0,
+        help="Harmonic backbone restraint weight (default 0.0)",
+    )
+    parser.add_argument(
         "--tensor-update-interval", type=int, default=500, help="Tensor update interval"
     )
     args = parser.parse_args()
@@ -265,5 +279,6 @@ if __name__ == "__main__":
         lr=args.lr,
         w_ca=args.w_ca,
         w_rdc=args.w_rdc,
+        w_restraint=args.w_restraint,
         tensor_update_interval=args.tensor_update_interval,
     )
