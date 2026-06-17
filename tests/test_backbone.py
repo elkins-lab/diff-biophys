@@ -1,6 +1,8 @@
 # mypy: disable-error-code="no-untyped-def"
 """Tests for diff_biophys.geometry.backbone."""
 
+from pathlib import Path
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -18,6 +20,9 @@ from diff_biophys.geometry.backbone import (
     make_backbone_builder,
 )
 from diff_biophys.geometry.torsions import compute_bond_lengths
+
+# Absolute path to 2KZV.pdb, independent of the working directory.
+_PDB_PATH = Path(__file__).resolve().parent.parent / "benchmarks" / "2KZV" / "2KZV.pdb"
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -42,17 +47,18 @@ def _make_seed() -> jnp.ndarray:
 
 def test_load_pdb_model_exists():
     """Verify load_pdb_model can read a file (using project test data)."""
-    # 2KZV.pdb exists in benchmarks/2KZV/
-    path = "benchmarks/2KZV/2KZV.pdb"
-    struct = load_pdb_model(path, model_id=1)
+    if not _PDB_PATH.exists():
+        pytest.skip("2KZV.pdb not present in benchmarks/2KZV/ — skipping")
+    struct = load_pdb_model(_PDB_PATH, model_id=1)
     assert struct.array_length() > 0
     assert "CA" in struct.atom_name
 
 
 def test_get_residue_info_matches_pdb():
     """get_residue_info extracts correct IDs and names from 2KZV."""
-    path = "benchmarks/2KZV/2KZV.pdb"
-    struct = load_pdb_model(path)
+    if not _PDB_PATH.exists():
+        pytest.skip("2KZV.pdb not present in benchmarks/2KZV/ — skipping")
+    struct = load_pdb_model(_PDB_PATH)
     res_ids, res_names = get_residue_info(struct)
     assert len(res_ids) == 92
     assert res_ids[0] == 1
@@ -61,8 +67,9 @@ def test_get_residue_info_matches_pdb():
 
 def test_get_backbone_coords_shape():
     """get_backbone_coords returns (3N, 3) array."""
-    path = "benchmarks/2KZV/2KZV.pdb"
-    struct = load_pdb_model(path)
+    if not _PDB_PATH.exists():
+        pytest.skip("2KZV.pdb not present in benchmarks/2KZV/ — skipping")
+    struct = load_pdb_model(_PDB_PATH)
     coords = get_backbone_coords(struct)
     # 92 residues * 3 atoms = 276
     assert coords.shape == (276, 3)
