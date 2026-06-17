@@ -1,0 +1,8 @@
+# Ignore downloaded benchmark data
+*.pdb
+*.str
+*.tsv
+*.txt
+
+# Ignore python cache
+__pycache__/
