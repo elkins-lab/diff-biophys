@@ -10,28 +10,32 @@ Protein: CV_0373(175-257) from Chromobacterium violaceum
          83 well-defined residues (BMRB sequence 1–92, comparison range 10–80)
 
 Observables used:
-  Phase 1 (available now):
-    - Cα chemical shifts (BMRB 17020, 91 residues)
-  Phase 2 (requires RPI GitHub access or author contact):
-    - ¹⁵N-¹H RDCs in PAG alignment medium (published Q = 0.22 for AF2 vs 0.18 for NMR)
-    - ¹⁵N-¹H RDCs in PEG alignment medium
+  Phase 1:  Cα chemical shifts (BMRB 17020, 91 residues)
+  Phase 2:  ¹⁵N-¹H RDCs in PAG medium (23 residues, data: rdc_PAG.tsv)
+            ¹⁵N-¹H RDCs in PEG medium (16 residues, data: rdc_PEG.tsv)
+            Published Q-factors (Table 5, Li et al.):
+              PAG: AF2=0.22  NMR medoid=0.18
+              PEG: AF2=0.35 (0.24*)  NMR medoid=0.36 (0.20*)
+              * excluding Thr14 outlier
 
 Benchmark design:
-  1. Load the NMR ensemble MODEL 1 from PDB 2KZV (the "target" / reference structure).
-  2. Start from the NMR ensemble MODEL 1 as well (so initial Q-factor ≡ published benchmark).
-  3. Apply gradient descent using diff_biophys.nmr.chemical_shifts and/or
+  1. Load PDB 2KZV NMR model (default: model 1).
+  2. Apply gradient descent using diff_biophys.nmr.chemical_shifts and/or
      diff_biophys.nmr.rdc as loss functions.
-  4. Report Q-factor (RDC) and Cα-shift RMSD before and after refinement.
+  3. Report Q-factor per medium and Cα RMSD before and after refinement.
 
 Usage:
-    # Phase 1: chemical shifts only (runs immediately)
+    # Phase 1: chemical shifts only
     python benchmark_2KZV.py
 
-    # Phase 2: add RDC data file when available (PAG alignment medium)
+    # Phase 2: one medium
     python benchmark_2KZV.py --rdc rdc_PAG.tsv
 
-    # Specify which MODEL from the NMR ensemble to use as the starting structure
-    python benchmark_2KZV.py --start-model 1
+    # Phase 2: both media simultaneously (recommended)
+    python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv
+
+    # Tune weights
+    python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv --w-ca 0.5 --w-rdc 1.0
 """
 
 import argparse
@@ -260,7 +264,7 @@ def make_rdc_loss(
 
 def run_benchmark(
     start_model: int = 1,
-    rdc_path: Path | None = None,
+    rdc_paths: list[Path] | None = None,
     n_steps: int = 500,
     lr: float = 0.01,
     w_ca: float = 1.0,
@@ -296,39 +300,39 @@ def run_benchmark(
         ca_exp["res_id"], ca_exp["shift"], res_ids, list(res_names)
     )
 
-    # RDCs (optional, Phase 2)
-    rdc_loss_fn = None
-    n_rdc = 0
-    if rdc_path is not None:
+    # RDCs (optional, Phase 2) — one loss function per medium, summed during optimisation
+    rdc_loss_fns: list[tuple[str, Callable[[jnp.ndarray], jnp.ndarray], int]] = []
+    for rdc_path in rdc_paths or []:
         rdc_all = load_rdc_table(rdc_path)
         if not rdc_all:
             print(f"  WARNING: RDC file {rdc_path} is empty or not found.")
-        else:
-            medium = list(rdc_all.keys())[0]
-            print(f"  RDC medium: {medium}")
-            rdc_loss_fn, rdc_exp = make_rdc_loss(rdc_all[medium], res_ids)
-            n_rdc = len(rdc_all[medium]["res_id"])
+            continue
+        medium = list(rdc_all.keys())[0]
+        print(f"  RDC medium '{medium}' from {rdc_path.name}")
+        loss_fn, _ = make_rdc_loss(rdc_all[medium], res_ids)
+        n_rdc = len(rdc_all[medium]["res_id"])
+        rdc_loss_fns.append((rdc_path.stem, loss_fn, n_rdc))
 
     # ── Compute baseline scores ──────────────────────────────────────────────
     print(f"\n[3] Baseline scores (NMR structure, model {start_model})...")
     init_ca_rmsd = float(ca_loss_fn(init_phi, init_psi))
     print(f"    Cα shift RMSD : {init_ca_rmsd:.3f} ppm  ({n_ca} residues)")
 
-    if rdc_loss_fn is not None:
+    if rdc_loss_fns:
         init_coords = build_structure(init_phi, init_psi)
-        init_q = float(rdc_loss_fn(init_coords))
-        print(f"    RDC Q-factor  : {init_q:.4f}  ({n_rdc} residues)")
-        print("    Published Q (NMR medoid, PAG): 0.18")
-        print("    Published Q (AF2 model 1, PAG): 0.22")
+        for label, loss_fn, n_rdc in rdc_loss_fns:
+            init_q = float(loss_fn(init_coords))
+            print(f"    RDC Q ({label:12s}): {init_q:.4f}  ({n_rdc} residues)")
 
     # ── Combined loss function ───────────────────────────────────────────────
     @jax.jit
     def total_loss(params: tuple[jnp.ndarray, jnp.ndarray]) -> jnp.ndarray:
         phi, psi = params
         loss = w_ca * ca_loss_fn(phi, psi)
-        if rdc_loss_fn is not None:
+        if rdc_loss_fns:
             coords = build_structure(phi, psi)
-            loss = loss + w_rdc * rdc_loss_fn(coords)
+            for _, loss_fn, _ in rdc_loss_fns:
+                loss = loss + w_rdc * loss_fn(coords)
         return loss
 
     # ── Optimization ─────────────────────────────────────────────────────────
@@ -354,33 +358,41 @@ def run_benchmark(
             phi_r, psi_r = params
             ca_rmsd = float(ca_loss_fn(phi_r, psi_r))
             line = f"  Step {i:4d} | total loss={float(loss):.4f} | Cα RMSD={ca_rmsd:.3f} ppm"
-            if rdc_loss_fn is not None:
-                final_coords = build_structure(phi_r, psi_r)
-                q = float(rdc_loss_fn(final_coords))
-                line += f" | Q={q:.4f}"
+            if rdc_loss_fns:
+                mid_coords = build_structure(phi_r, psi_r)
+                for label, loss_fn, _ in rdc_loss_fns:
+                    q = float(loss_fn(mid_coords))
+                    line += f" | Q({label})={q:.4f}"
             print(line)
 
     # ── Final scores ─────────────────────────────────────────────────────────
     final_phi, final_psi = params
     final_ca_rmsd = float(ca_loss_fn(final_phi, final_psi))
 
+    PUBLISHED = {
+        "rdc_PAG": {"af2": 0.22, "nmr": 0.18},
+        "rdc_PEG": {"af2": 0.35, "nmr": 0.36},
+    }
+
     print("\n[5] Results summary")
-    print("-" * 50)
+    print("=" * 65)
     print(f"  Cα shift RMSD  before: {init_ca_rmsd:.3f} ppm")
     print(f"  Cα shift RMSD  after : {final_ca_rmsd:.3f} ppm")
-    print(f"  Improvement          : {init_ca_rmsd - final_ca_rmsd:+.3f} ppm")
+    print(f"  Δ Cα RMSD            : {init_ca_rmsd - final_ca_rmsd:+.3f} ppm")
 
-    if rdc_loss_fn is not None:
+    if rdc_loss_fns:
+        init_coords_final = build_structure(init_phi, init_psi)
         final_coords = build_structure(final_phi, final_psi)
-        final_q = float(rdc_loss_fn(final_coords))
-        init_q_final = float(rdc_loss_fn(build_structure(init_phi, init_psi)))
-        print(f"\n  RDC Q-factor   before: {init_q_final:.4f}")
-        print(f"  RDC Q-factor   after : {final_q:.4f}")
-        print(f"  Improvement          : {init_q_final - final_q:+.4f}")
-        print("\n  Published benchmarks (PAG):")
-        print("    NMR medoid Q = 0.18")
-        print("    AF2 model  Q = 0.22")
-        print(f"    This result Q = {final_q:.4f}")
+        for label, loss_fn, n_rdc in rdc_loss_fns:
+            q_before = float(loss_fn(init_coords_final))
+            q_after = float(loss_fn(final_coords))
+            pub = PUBLISHED.get(label, {})
+            print(f"\n  RDC Q ({label}, {n_rdc} residues)")
+            print(f"    before : {q_before:.4f}")
+            print(f"    after  : {q_after:.4f}")
+            print(f"    Δ Q    : {q_before - q_after:+.4f}")
+            if pub:
+                print(f"    published AF2 Q = {pub['af2']:.2f}  |  NMR medoid Q = {pub['nmr']:.2f}")
 
     # Save history
     np.savetxt(BENCH_DIR / "loss_history.txt", history, header="total_loss per step", comments="# ")
@@ -392,12 +404,23 @@ def run_benchmark(
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="diff-biophys 2KZV benchmark")
+    parser = argparse.ArgumentParser(
+        description="diff-biophys 2KZV benchmark",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  python benchmark_2KZV.py                              # Phase 1: Ca shifts only\n"
+            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv           # + PAG RDCs\n"
+            "  python benchmark_2KZV.py --rdc rdc_PAG.tsv rdc_PEG.tsv  # both media\n"
+        ),
+    )
     parser.add_argument(
         "--rdc",
         type=Path,
+        nargs="+",
         default=None,
-        help="Path to RDC table TSV (res_id res_name rdc_hz err_hz medium)",
+        metavar="TSV",
+        help="RDC table TSV file(s). Pass multiple files to use both media simultaneously.",
     )
     parser.add_argument(
         "--start-model",
@@ -413,13 +436,16 @@ if __name__ == "__main__":
         "--w-ca", type=float, default=1.0, help="Weight for Cα chemical shift loss (default 1.0)"
     )
     parser.add_argument(
-        "--w-rdc", type=float, default=1.0, help="Weight for RDC Q-factor loss (default 1.0)"
+        "--w-rdc",
+        type=float,
+        default=1.0,
+        help="Weight for RDC Q-factor loss per medium (default 1.0)",
     )
     args = parser.parse_args()
 
     run_benchmark(
         start_model=args.start_model,
-        rdc_path=args.rdc,
+        rdc_paths=args.rdc,
         n_steps=args.steps,
         lr=args.lr,
         w_ca=args.w_ca,

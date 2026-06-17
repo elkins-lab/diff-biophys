@@ -147,22 +147,31 @@ def load_bmrb_shifts(path: Path | str) -> dict:
 
 def load_rdc_table(path: Path | str) -> dict:
     """
-    Load ¹⁵N-¹H RDC data from a simple whitespace-delimited text file.
+    Load ¹⁵N-¹H RDC data from a whitespace-delimited TSV file.
 
-    Expected format (comment lines start with #):
-        # res_id  res_name  rdc_hz  error_hz  medium
-        10        GLN       -12.3   0.5       PAG
-        14        THR        -8.1   0.5       PAG
-        ...
+    Accepts two formats (comment lines start with #):
+
+    4-column (current TSV format — medium inferred from filename):
+        res_id  res_name  rdc_hz  err_hz
+        14      THR       -1.793  1.187
+
+    5-column (legacy format — medium explicit):
+        res_id  res_name  rdc_hz  err_hz  medium
+        14      THR       -1.793  1.187   PAG
 
     Returns:
         dict keyed by medium name (e.g. "PAG", "PEG"), each value:
             {"res_id": np.array[int], "rdc": np.array[float]}
-        Returns {} if the file doesn't exist.
+        Returns {} if the file doesn't exist or contains no valid rows.
     """
     path = Path(path)
     if not path.exists():
         return {}
+
+    # Derive medium from filename stem if not embedded in the file
+    # e.g. "rdc_PAG.tsv" → "PAG"
+    stem = path.stem.upper()  # e.g. "RDC_PAG"
+    filename_medium = stem.split("_")[-1] if "_" in stem else stem
 
     groups: dict[str, tuple[list, list]] = {}
     with open(path) as f:
@@ -171,12 +180,12 @@ def load_rdc_table(path: Path | str) -> dict:
             if not line or line.startswith("#"):
                 continue
             tokens = line.split()
-            if len(tokens) < 5:
+            if len(tokens) < 4:
                 continue
             try:
                 res_id = int(tokens[0])
                 rdc_hz = float(tokens[2])
-                medium = tokens[4].upper()
+                medium = tokens[4].upper() if len(tokens) >= 5 else filename_medium
                 groups.setdefault(medium, ([], []))
                 groups[medium][0].append(res_id)
                 groups[medium][1].append(rdc_hz)
