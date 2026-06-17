@@ -12,6 +12,9 @@ from diff_biophys.geometry.backbone import (
     N_CA_C_ANGLE,
     N_CA_LENGTH,
     compute_phi_psi,
+    get_backbone_coords,
+    get_residue_info,
+    load_pdb_model,
     make_backbone_builder,
 )
 from diff_biophys.geometry.torsions import compute_bond_lengths
@@ -30,6 +33,39 @@ def _make_seed() -> jnp.ndarray:
         dtype=jnp.float32,
     )
     return jnp.stack([n0, ca0, c0])
+
+
+# ---------------------------------------------------------------------------
+# PDB loading and extraction
+# ---------------------------------------------------------------------------
+
+
+def test_load_pdb_model_exists():
+    """Verify load_pdb_model can read a file (using project test data)."""
+    # 2KZV.pdb exists in benchmarks/2KZV/
+    path = "benchmarks/2KZV/2KZV.pdb"
+    struct = load_pdb_model(path, model_id=1)
+    assert struct.array_length() > 0
+    assert "CA" in struct.atom_name
+
+
+def test_get_residue_info_matches_pdb():
+    """get_residue_info extracts correct IDs and names from 2KZV."""
+    path = "benchmarks/2KZV/2KZV.pdb"
+    struct = load_pdb_model(path)
+    res_ids, res_names = get_residue_info(struct)
+    assert len(res_ids) == 92
+    assert res_ids[0] == 1
+    assert res_names[0] == "MET"
+
+
+def test_get_backbone_coords_shape():
+    """get_backbone_coords returns (3N, 3) array."""
+    path = "benchmarks/2KZV/2KZV.pdb"
+    struct = load_pdb_model(path)
+    coords = get_backbone_coords(struct)
+    # 92 residues * 3 atoms = 276
+    assert coords.shape == (276, 3)
 
 
 # ---------------------------------------------------------------------------

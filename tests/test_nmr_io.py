@@ -114,6 +114,27 @@ def test_load_rdc_table_missing_file(tmp_path):
 # ---------------------------------------------------------------------------
 
 
+def test_load_rdc_table_skips_invalid_lines(tmp_path):
+    """Lines with too few tokens or invalid numbers are skipped."""
+    p = write_temp(
+        tmp_path,
+        "rdc_PAG.tsv",
+        """\
+        # Valid
+        10  ALA   1.0   0.1
+        # Too few tokens
+        20  GLY   2.0
+        # Invalid res_id
+        NaN  ALA  3.0   0.1
+        # Invalid rdc
+        40  ALA   XXX   0.1
+        """,
+    )
+    result = load_rdc_table(p)
+    assert list(result["PAG"]["res_id"]) == [10]
+    np.testing.assert_allclose(result["PAG"]["rdc"], [1.0], atol=1e-6)
+
+
 def test_load_rdc_table_values_dtype(tmp_path):
     """res_id is int32 and rdc is float32."""
     p = write_temp(
