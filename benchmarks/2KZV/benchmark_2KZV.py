@@ -228,22 +228,52 @@ def make_rdc_loss(
     exp_jax = jnp.array(matched_rdc, dtype=jnp.float32)
 
     def get_nh_vectors(coords: jnp.ndarray) -> jnp.ndarray:
-        """Extract N–H bond vectors from N-CA-C coordinates.
-        For each residue i (0-indexed): N is at index 3i, CA at 3i+1.
-        The amide H is approximately in the plane of N–CA–C(i-1):
-        we approximate the NH vector as the unit vector from N[i] toward
-        a position displaced from N[i] along (N[i]-CA[i]) direction.
-        A simpler proxy: use N[i+1]-C[i] (inter-residue peptide vector).
-        Here we use the canonical approximation: unit(N[i] - CA[i]).
+        """Reconstruct amide N–H bond unit vectors from N-CA-C backbone.
+
+        The amide H lies in the peptide plane defined by C(i-1), N(i), CA(i),
+        at a fixed bond angle of ~119° from the N(i)-CA(i) bond.
+
+        Layout: coords = [N0, CA0, C0, N1, CA1, C1, ...]
+          N(i)    = coords[3i]
+          CA(i)   = coords[3i+1]
+          C(i-1)  = coords[3i-1]  (for i >= 1)
+
+        For residue 0 (no preceding C), fall back to the N-CA direction
+        (this residue is almost never in the RDC set anyway).
         """
         n_atoms = coords[0::3]  # (N_res, 3)
         ca_atoms = coords[1::3]  # (N_res, 3)
-        # NH direction approximated as N→(N - CA) unit vector
-        # (good proxy for backbone NH orientation)
-        raw = n_atoms - ca_atoms
-        norms = jnp.linalg.norm(raw, axis=-1, keepdims=True)
-        unit = raw / jnp.maximum(norms, 1e-8)
-        return unit  # (N_res, 3)
+        c_atoms = coords[2::3]  # (N_res, 3)
+
+        # Unit vector N→CA  (needed for angle placement)
+        n_to_ca = ca_atoms - n_atoms  # (N_res, 3)
+        n_to_ca = n_to_ca / jnp.maximum(jnp.linalg.norm(n_to_ca, axis=-1, keepdims=True), 1e-8)
+
+        # Unit vector N→C(i-1):  C(i-1) = c_atoms[i-1]
+        # For i=0, use a dummy direction (will be masked or unused)
+        c_prev = jnp.concatenate([c_atoms[:1], c_atoms[:-1]], axis=0)  # (N_res, 3)
+        n_to_cprev = c_prev - n_atoms
+        n_to_cprev = n_to_cprev / jnp.maximum(
+            jnp.linalg.norm(n_to_cprev, axis=-1, keepdims=True), 1e-8
+        )
+
+        # H lies in the C(i-1)-N-CA plane.
+        # Bisector of C(i-1)-N and CA-N bonds (both pointing away from N)
+        # then flip: H is on the opposite side of N from the bisector.
+        # H direction ≈ -(n_to_ca + n_to_cprev) / |...|
+        # This places H at ~119° from both N-CA and N-C(i-1) bonds.
+        bisector = n_to_ca + n_to_cprev  # (N_res, 3)
+        bisector_norm = jnp.linalg.norm(bisector, axis=-1, keepdims=True)
+        bisector = bisector / jnp.maximum(bisector_norm, 1e-8)
+
+        # NH points anti-parallel to the bisector
+        nh = -bisector  # (N_res, 3)
+
+        # Residue 0 fallback: use N-CA direction (no C(i-1) available)
+        nh_r0 = -n_to_ca[:1]
+        nh = jnp.concatenate([nh_r0, nh[1:]], axis=0)
+
+        return nh  # (N_res, 3)  — already unit vectors
 
     matched_idx_jax = jnp.array(matched_idx, dtype=jnp.int32)
 
