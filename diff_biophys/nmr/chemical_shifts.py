@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+
 import jax.numpy as jnp
+import numpy as np
 from jax import jit
 
 # Baseline Random Coil Shifts (Wishart et al. 1995, J. Biomol. NMR 5, 67–81)
@@ -98,3 +103,79 @@ def predict_ca_shifts(phi: jnp.ndarray, psi: jnp.ndarray, rc_shifts: jnp.ndarray
     # --- Weighted offset ---
     # Coil weight contributes 0 offset (it is the RC baseline).
     return rc_shifts + (w_helix * OFFSET_HELIX) + (w_sheet * OFFSET_SHEET)
+
+
+# ---------------------------------------------------------------------------
+# Loss builder
+# ---------------------------------------------------------------------------
+
+
+def make_ca_shift_loss(
+    exp_res_ids: np.ndarray,
+    exp_shifts: np.ndarray,
+    struct_res_ids: np.ndarray,
+    struct_res_names: list[str],
+) -> tuple[Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray], int]:
+    """Build a differentiable Cα chemical shift RMSD loss.
+
+    Matches experimental residues to the structure by residue ID and builds a
+    JAX-differentiable closure that predicts Cα shifts from backbone torsions
+    and returns the RMSD against the matched experimental values.
+
+    Args:
+        exp_res_ids: ``(M,)`` residue IDs from the experimental dataset.
+        exp_shifts: ``(M,)`` experimental Cα chemical shifts in ppm.
+        struct_res_ids: ``(N,)`` residue IDs present in the structure.
+        struct_res_names: List of N three-letter residue codes, aligned with
+            ``struct_res_ids``.
+
+    Returns:
+        Tuple ``(loss_fn, n_matched)`` where:
+
+        * **loss_fn** ``(phi, psi) → scalar RMSD (ppm)`` — differentiable with
+          respect to both torsion arrays.
+        * **n_matched** — number of residues found in both datasets.
+
+    Raises:
+        ValueError: If no residues overlap between the experimental and
+            structure datasets.
+    """
+    res_id_to_idx = {int(rid): i for i, rid in enumerate(struct_res_ids)}
+
+    matched_struct_idx: list[int] = []
+    matched_exp: list[float] = []
+    matched_names: list[str] = []
+
+    for rid, shift in zip(exp_res_ids, exp_shifts, strict=False):
+        if int(rid) in res_id_to_idx:
+            si = res_id_to_idx[int(rid)]
+            matched_struct_idx.append(si)
+            matched_exp.append(float(shift))
+            matched_names.append(struct_res_names[si])
+
+    if not matched_struct_idx:
+        raise ValueError(
+            "No residues overlap between exp_res_ids and struct_res_ids. "
+            "Check that residue numbering conventions match."
+        )
+
+    rc = np.array([RANDOM_COIL_CA.get(name, 55.0) for name in matched_names], dtype=np.float32)
+    rc_jax = jnp.array(rc)
+    exp_jax = jnp.array(matched_exp, dtype=jnp.float32)
+    idx_jax = jnp.array(matched_struct_idx, dtype=jnp.int32)
+    n_matched = len(matched_struct_idx)
+
+    def loss_fn(phi: jnp.ndarray, psi: jnp.ndarray) -> jnp.ndarray:
+        """Cα shift RMSD loss.
+
+        Args:
+            phi: ``(N,)`` backbone φ angles in radians.
+            psi: ``(N,)`` backbone ψ angles in radians.
+
+        Returns:
+            jnp.ndarray: Scalar RMSD in ppm.
+        """
+        pred = predict_ca_shifts(phi[idx_jax], psi[idx_jax], rc_jax)
+        return jnp.sqrt(jnp.mean((pred - exp_jax) ** 2))
+
+    return loss_fn, n_matched

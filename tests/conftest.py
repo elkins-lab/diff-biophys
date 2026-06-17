@@ -270,3 +270,45 @@ def small_density_map() -> tuple[jnp.ndarray, jnp.ndarray]:
     map1 = density + 0.05 * rng.standard_normal(density.shape).astype(np.float32)
     map2 = density + 0.05 * rng.standard_normal(density.shape).astype(np.float32)
     return jnp.array(map1, dtype=jnp.float32), jnp.array(map2, dtype=jnp.float32)
+
+
+# ---------------------------------------------------------------------------
+# Backbone fixtures (for backbone geometry and NH vector tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def backbone_coords_6res() -> jnp.ndarray:
+    """N–CA–C backbone coordinates for a 6-residue ideal α-helix.
+
+    Built from the canonical helix φ/ψ (−57°, −47°) using
+    :func:`~diff_biophys.geometry.backbone.make_backbone_builder` with
+    ideal Engh & Huber bond geometry.
+
+    The seed uses the correct N–CA–C bond angle so the first three atoms are
+    non-collinear and NERF can compute well-defined dihedral angles.
+
+    Returns ``(18, 3)`` array — 6 residues × 3 backbone atoms each.
+    This fixture is shared by backbone geometry and NH bond vector tests.
+    """
+    from diff_biophys.geometry.backbone import (
+        CA_C_LENGTH,
+        N_CA_C_ANGLE,
+        N_CA_LENGTH,
+        make_backbone_builder,
+    )
+
+    # Non-collinear seed: N0 at origin, CA0 along x, C0 at the correct bond angle
+    n0 = jnp.array([0.0, 0.0, 0.0], dtype=jnp.float32)
+    ca0 = jnp.array([N_CA_LENGTH, 0.0, 0.0], dtype=jnp.float32)
+    c0 = ca0 + CA_C_LENGTH * jnp.array(
+        [float(np.cos(np.pi - N_CA_C_ANGLE)), float(np.sin(np.pi - N_CA_C_ANGLE)), 0.0],
+        dtype=jnp.float32,
+    )
+    seed = jnp.stack([n0, ca0, c0])
+
+    n_res = 6
+    build = make_backbone_builder(n_res, seed)
+    phi = jnp.full((n_res,), np.deg2rad(-57.0), dtype=jnp.float32)
+    psi = jnp.full((n_res,), np.deg2rad(-47.0), dtype=jnp.float32)
+    return build(phi, psi)  # (18, 3)

@@ -1,8 +1,13 @@
 """
-parse_bmrb.py — Extract chemical shift data from BMRB 17020 NMR-STAR file.
+parse_bmrb.py — Extract chemical shift data from BMRB NMR-STAR files.
 
-Produces structured dicts for each atom type (CA, N, H), and can also
-load RDC tables from a simple TSV file once available.
+Provides structured dicts for each backbone atom type (CA, N, H).
+This module handles the BMRB-specific NMR-STAR v3 format; it is intentionally
+kept separate from the main diff_biophys package because NMR-STAR is a
+specialised deposition format, not a general interchange format.
+
+Note: generic RDC table loading (whitespace-delimited TSV/DC format) has moved
+to :func:`diff_biophys.nmr.io.load_rdc_table`.
 
 Usage:
     data = load_bmrb_shifts("bmrb17020.str")
@@ -143,62 +148,6 @@ def load_bmrb_shifts(path: Path | str) -> dict:
                 "error": np.array([e.error for e in subset], dtype=np.float32),
             }
     return result
-
-
-def load_rdc_table(path: Path | str) -> dict:
-    """
-    Load ¹⁵N-¹H RDC data from a whitespace-delimited TSV file.
-
-    Accepts two formats (comment lines start with #):
-
-    4-column (current TSV format — medium inferred from filename):
-        res_id  res_name  rdc_hz  err_hz
-        14      THR       -1.793  1.187
-
-    5-column (legacy format — medium explicit):
-        res_id  res_name  rdc_hz  err_hz  medium
-        14      THR       -1.793  1.187   PAG
-
-    Returns:
-        dict keyed by medium name (e.g. "PAG", "PEG"), each value:
-            {"res_id": np.array[int], "rdc": np.array[float]}
-        Returns {} if the file doesn't exist or contains no valid rows.
-    """
-    path = Path(path)
-    if not path.exists():
-        return {}
-
-    # Derive medium from filename stem if not embedded in the file
-    # e.g. "rdc_PAG.tsv" → "PAG"
-    stem = path.stem.upper()  # e.g. "RDC_PAG"
-    filename_medium = stem.split("_")[-1] if "_" in stem else stem
-
-    groups: dict[str, tuple[list, list]] = {}
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            tokens = line.split()
-            if len(tokens) < 4:
-                continue
-            try:
-                res_id = int(tokens[0])
-                rdc_hz = float(tokens[2])
-                medium = tokens[4].upper() if len(tokens) >= 5 else filename_medium
-                groups.setdefault(medium, ([], []))
-                groups[medium][0].append(res_id)
-                groups[medium][1].append(rdc_hz)
-            except (ValueError, IndexError):
-                continue
-
-    return {
-        medium: {
-            "res_id": np.array(ids, dtype=np.int32),
-            "rdc": np.array(vals, dtype=np.float32),
-        }
-        for medium, (ids, vals) in groups.items()
-    }
 
 
 if __name__ == "__main__":
