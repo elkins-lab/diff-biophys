@@ -1,11 +1,25 @@
 """Static integrity checks for example notebooks."""
 
+import asyncio
 import json
+import sys
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# On Windows the default Proactor event loop does not support the add_reader
+# family of methods that zmq (and therefore nbclient) requires.  Switch to the
+# Selector policy before any notebook execution so that kernel communication
+# works reliably and does not produce spurious timeouts.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+# JAX's first import triggers XLA compilation and device detection.  On
+# Windows CI with a cold XLA cache this can take well over 60 seconds.
+# 300 s gives a generous margin without masking genuine hangs.
+_NOTEBOOK_TIMEOUT = 300
 
 
 def test_example_notebooks_are_valid_json() -> None:
@@ -42,6 +56,6 @@ def test_notebook_execution(notebook_path: str) -> None:
     with open(path, encoding="utf-8") as f:
         nb = nbformat.read(f, as_version=4)
 
-    client = NotebookClient(nb, timeout=60, kernel_name="python3")
+    client = NotebookClient(nb, timeout=_NOTEBOOK_TIMEOUT, kernel_name="python3")
     # This will raise an exception if any cell fails
     client.execute()
