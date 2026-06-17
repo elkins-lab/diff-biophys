@@ -3,7 +3,7 @@
 **Protein**: GmR58A from *Geobacter metallireducens*
 **PDB**: [2KUT](https://www.rcsb.org/structure/2KUT) (10-model NMR ensemble) | **BMRB**: [16746](https://bmrb.io/data_library/summary/index.php?bmrbId=16746)
 
-**Why this is a better benchmark than 2KZV**: All data is fully public in BMRB 16746 — no institutional GitHub access required. The dataset includes **3 independent alignment media**, which over-determines the Saupe tensor and makes the benchmark much harder to overfit than a single-medium measurement.
+**Why this is a better benchmark than 2KZV**: All data is fully public in BMRB 16746. The dataset includes **3 independent alignment media**, which over-determines the Saupe tensor and makes the benchmark much harder to overfit than a single-medium measurement.
 
 ---
 
