@@ -1,5 +1,7 @@
 # 🧬 DiffBiophys
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20673558.svg)](https://doi.org/10.5281/zenodo.20673558)
+
 Welcome to **DiffBiophys**, a high-performance Python library for **differentiable biophysical modeling**.
 
 Built on **JAX**, it re-implements core structural biology and spectroscopy observables (SAXS, NMR, CD) as hardware-accelerated, auto-differentiable kernels.
@@ -11,4 +13,3 @@ Traditional biophysics libraries provide "forward models" (Structure -> Observab
 - **Refine** protein loops directly against experimental NMR data.
 - **Fit** structure ensembles to SAXS scattering curves.
 - **Integrate** physical constraints into machine learning loss functions.
-

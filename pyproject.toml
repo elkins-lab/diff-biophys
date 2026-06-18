@@ -31,6 +31,7 @@ dependencies = [
 Homepage = "https://github.com/elkins-lab/diff-biophys"
 Repository = "https://github.com/elkins-lab/diff-biophys"
 Documentation = "https://elkins-lab.github.io/diff-biophys/"
+Zenodo = "https://doi.org/10.5281/zenodo.20673558"
 
 [project.optional-dependencies]
 dev = [
