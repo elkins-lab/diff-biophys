@@ -9,7 +9,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13178/badge)](https://www.bestpractices.dev/projects/13178)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20735415.svg)](https://doi.org/10.5281/zenodo.20673558)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20673558-blue)](https://doi.org/10.5281/zenodo.20673558)
 
 **Diff-Biophys** is a high-performance Python library for differentiable biophysical modeling. Built on **JAX**, it re-implements core structural biology and spectroscopy observables (SAXS, NMR, CD) as hardware-accelerated, auto-differentiable kernels.
 
