@@ -56,6 +56,14 @@ BMRB_PATH = BENCH_DIR / "bmrb18489_HR2876B.str"
 
 PUBLISHED_NMR_Q = 0.32
 
+# Baseline Q-factors computed directly from 2LTM model 1 Cartesian coordinates
+# and the deposited BMRB 18489 RDC data (no NERF reconstruction).
+# These are the ground-truth reference values for regression testing.
+RAW_PDB_Q = {
+    "RDC_list_1": 0.440,  # PEG alignment medium
+    "RDC_list_2": 0.444,  # Pf1 phage alignment medium
+}
+
 
 def run_benchmark(
     start_model: int = 1,
@@ -65,7 +73,7 @@ def run_benchmark(
     w_ca: float = 1.0,
     w_rdc: float = 1.0,
     w_restraint: float = 0.0,
-    tensor_update_interval: int = 500,
+    tensor_update_interval: int = 50,
 ) -> tuple[list[float], tuple[jnp.ndarray, jnp.ndarray]]:
     print("diff-biophys Benchmark: HR2876B (PDB 2LTM, BMRB 18489)")
     print("CASD-NMR 2013 target (Rosato et al. 2015)")
@@ -86,6 +94,22 @@ def run_benchmark(
     build_structure = make_backbone_builder(n_residues, seed_coords)
 
     init_phi, init_psi = compute_phi_psi(coords)
+
+    # ── Warn about NERF reconstruction drift ─────────────────────────────────
+    # make_backbone_builder uses ideal bond lengths/angles; the cumulative
+    # drift over many residues can inflate the starting Q substantially.
+    # Baseline Q-factors are always reported from raw PDB Cartesian coords.
+    init_coords_rebuilt = build_structure(init_phi, init_psi)
+    raw_ca = coords[1::3]
+    rebuilt_ca = init_coords_rebuilt[1::3]
+    nerf_ca_rmsd = float(jnp.sqrt(jnp.mean(jnp.sum((raw_ca - rebuilt_ca) ** 2, axis=-1))))
+    if nerf_ca_rmsd > 1.0:
+        print(
+            f"  ⚠  NERF reconstruction drift: Cα RMSD = {nerf_ca_rmsd:.1f} Å\n"
+            f"     Baseline Q-factors are computed from raw PDB Cartesian coordinates.\n"
+            f"     Optimization starts from the NERF-parameterized backbone, which\n"
+            f"     may differ from the PDB structure."
+        )
 
     # ── Load experimental data ───────────────────────────────────────────────
     print("\n[2] Loading experimental data from BMRB 18489...")
@@ -123,22 +147,35 @@ def run_benchmark(
             loss_fn, q_eval_fn, make_tensor_fn, n_matched = make_rdc_refinement_fns(
                 rdc_data["res_id"], rdc_data["rdc"], res_ids
             )
-            rdc_entries.append((medium, loss_fn, q_eval_fn, make_tensor_fn, n_matched))
+            # Scale RDC loss by 1/rms(exp)^2 so it is dimensionless and
+            # comparable in magnitude to the Cα RMSD loss (~ppm^2 scale).
+            rdc_rms = float(np.sqrt(np.mean(rdc_data["rdc"] ** 2)))
+            rdc_entries.append((medium, loss_fn, q_eval_fn, make_tensor_fn, n_matched, rdc_rms))
 
     # ── Baseline scores ──────────────────────────────────────────────────────
-    print(f"\n[3] Baseline scores (NMR structure, model {start_model})...")
+    # Q-factors are evaluated on the raw PDB Cartesian coordinates so that
+    # NERF reconstruction drift does not inflate the apparent starting Q.
+    print(f"\n[3] Baseline scores (NMR structure, model {start_model}, raw Cartesian)...")
     init_ca_rmsd = float(ca_loss_fn(init_phi, init_psi))
     print(f"    Cα shift RMSD : {init_ca_rmsd:.3f} ppm  ({n_ca} residues)")
 
-    init_coords = build_structure(init_phi, init_psi)
-
-    # Fit initial alignment tensors
-    tensors = [make_tensor_fn(init_coords) for _, _, _, make_tensor_fn, _ in rdc_entries]
+    # Fit initial alignment tensors from NERF-rebuilt coords (required for optimization)
+    init_coords_nerf = build_structure(init_phi, init_psi)
+    tensors = [make_tensor_fn(init_coords_nerf) for _, _, _, make_tensor_fn, _, _ in rdc_entries]
 
     if rdc_entries:
-        for (label, _, q_eval_fn, _, n_rdc), _t in zip(rdc_entries, tensors, strict=False):
-            init_q = float(q_eval_fn(init_coords))
-            print(f"    RDC Q ({label:12s}): {init_q:.4f}  ({n_rdc} residues)")
+        for (label, _, q_eval_fn, _, _n_rdc, _rms), _t in zip(rdc_entries, tensors, strict=False):
+            # Baseline Q from raw PDB (ground truth)
+            q_raw = float(q_eval_fn(coords))
+            q_nerf = float(q_eval_fn(init_coords_nerf))
+            ref_q = RAW_PDB_Q.get(label, None)
+            ref_str = f"  [reference: {ref_q:.3f}]" if ref_q else ""
+            print(f"    RDC Q ({label:12s}): {q_raw:.4f} (raw PDB){ref_str}")
+            if abs(q_nerf - q_raw) > 0.05:
+                print(
+                    f"      ↳ NERF-rebuilt start: {q_nerf:.4f}  "
+                    f"(Δ={q_nerf - q_raw:+.4f} from NERF drift; optimization starts here)"
+                )
 
     # ── Combined loss ────────────────────────────────────────────────────────
     @jax.jit
@@ -157,8 +194,12 @@ def run_benchmark(
 
         if rdc_entries:
             c = build_structure(phi, psi)
-            for (_, rdc_loss, _, _, _), t in zip(rdc_entries, current_tensors, strict=False):
-                loss = loss + w_rdc * rdc_loss(c, t)
+            for (_, rdc_loss, _, _, _, rdc_rms), t in zip(
+                rdc_entries, current_tensors, strict=False
+            ):
+                # Normalize by rms(exp)^2 so the RDC term is dimensionless
+                # and comparable in magnitude to the Cα RMSD term.
+                loss = loss + w_rdc * rdc_loss(c, t) / (rdc_rms**2 + 1e-8)
         return loss
 
     # ── Optimization ─────────────────────────────────────────────────────────
@@ -183,11 +224,13 @@ def run_benchmark(
         return new_params, new_opt_state, loss
 
     for i in range(n_steps + 1):
-        # Periodically re-fit alignment tensors outside the gradient
+        # Periodically re-fit alignment tensors outside the gradient.
+        # Frequent updates (default every 50 steps) prevent the tensor from
+        # drifting and creating a feedback loop that drives Q unphysically low.
         if i > 0 and rdc_entries and tensor_update_interval > 0 and i % tensor_update_interval == 0:
             phi_u, psi_u = params
             cur_coords = build_structure(phi_u, psi_u)
-            tensors = [make_tensor_fn(cur_coords) for _, _, _, make_tensor_fn, _ in rdc_entries]
+            tensors = [make_tensor_fn(cur_coords) for _, _, _, make_tensor_fn, _, _ in rdc_entries]
 
         params, opt_state, loss = step(params, opt_state, tensors)
         history.append(float(loss))
@@ -198,7 +241,7 @@ def run_benchmark(
             line = f"  Step {i:4d} | total loss={float(loss):.4f} | Cα RMSD={ca_rmsd:.3f} ppm"
             if rdc_entries:
                 mid_coords = build_structure(phi_r, psi_r)
-                for label, _, q_eval_fn, _, _ in rdc_entries:
+                for label, _, q_eval_fn, _, _, _ in rdc_entries:
                     q = float(q_eval_fn(mid_coords))
                     line += f" | Q({label})={q:.4f}"
             print(line)
@@ -214,22 +257,28 @@ def run_benchmark(
     print(f"  Δ Cα RMSD            : {init_ca_rmsd - final_ca_rmsd:+.3f} ppm")
 
     if rdc_entries:
-        init_coords_final = build_structure(init_phi, init_psi)
+        # Report Q from both the raw PDB coords (ground truth) and NERF-optimized
         final_coords = build_structure(final_phi, final_psi)
-        for label, _, q_eval_fn, _, n_rdc in rdc_entries:
-            q_before = float(q_eval_fn(init_coords_final))
-            q_after = float(q_eval_fn(final_coords))
+        for label, _, q_eval_fn, _, n_rdc, _ in rdc_entries:
+            q_raw_start = float(q_eval_fn(coords))  # raw PDB coords (ground truth)
+            q_nerf_start = float(q_eval_fn(init_coords_nerf))  # NERF-rebuilt start
+            q_after = float(q_eval_fn(final_coords))  # after optimization
+            ref_q = RAW_PDB_Q.get(label, None)
             print(f"\n  RDC Q ({label}, {n_rdc} residues)")
-            print(f"    before : {q_before:.4f}")
-            print(f"    after  : {q_after:.4f}")
-            print(f"    Δ Q    : {q_before - q_after:+.4f}")
-            print(f"    published NMR medoid Q ≈ {PUBLISHED_NMR_Q:.2f}")
-            if q_after < PUBLISHED_NMR_Q * 0.5:
+            print(
+                f"    raw PDB (ground truth)  : {q_raw_start:.4f}"
+                + (f"  [stored reference: {ref_q:.3f}]" if ref_q else "")
+            )
+            print(f"    NERF start (optimization start): {q_nerf_start:.4f}")
+            print(f"    after optimization      : {q_after:.4f}")
+            print(f"    Δ Q (NERF start → after): {q_nerf_start - q_after:+.4f}")
+            print(f"    published NMR medoid Q  ≈ {PUBLISHED_NMR_Q:.2f}")
+            if q_after < q_raw_start * 0.7:
                 print(
-                    f"    ⚠  Q after ({q_after:.3f}) is well below the published NMR target "
-                    f"({PUBLISHED_NMR_Q:.2f}), indicating extreme overfitting. "
-                    f"The backbone is being contorted to satisfy RDCs because the system "
-                    f"is globally underdetermined (214 DOFs vs {n_rdc} constraints)."
+                    f"    ⚠  Optimized Q ({q_after:.3f}) is >30% below the raw-PDB baseline "
+                    f"({q_raw_start:.3f}). The NERF backbone is fitting the RDC data beyond "
+                    f"the level achievable by the actual NMR structure — this is overfitting. "
+                    f"Consider increasing --tensor-update-interval or reducing --w-rdc."
                 )
 
     np.savetxt(BENCH_DIR / "loss_history.txt", history, header="total_loss per step", comments="# ")
@@ -268,7 +317,10 @@ if __name__ == "__main__":
         help="Harmonic backbone restraint weight (default 0.0)",
     )
     parser.add_argument(
-        "--tensor-update-interval", type=int, default=500, help="Tensor update interval"
+        "--tensor-update-interval",
+        type=int,
+        default=50,
+        help="Steps between Saupe tensor re-fits (default 50). Lower = more accurate, less overfitting.",
     )
     args = parser.parse_args()
 
