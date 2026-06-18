@@ -72,6 +72,30 @@ In our tutorials, we use an optimizer called **Adam** (Adaptive Moment Estimatio
 - **Momentum:** Remembers its previous speed to help roll over small local dips.
 - **Adaptive Steps:** Automatically slows down in steep areas and speeds up in flat plains, making it much more robust than standard gradient descent.
 
+### 6. When Does Optimization Actually Work? (Honest Use Cases)
+
+The benchmarks in `benchmarks/` were designed to expose the limits of the library, not
+just demonstrate its successes. Here is an evidence-based summary of which setups
+genuinely improve a structure and which overfit.
+
+| Use case | Overfits? | Why not |
+|---|---|---|
+| **ML training loss** — backprop experimental gradients through AlphaFold/ESMFold | ✅ No | The generative model encodes structural priors; diff-biophys provides the experimental signal |
+| **Alignment tensor fitting** for a fixed structure (`fit_saupe_tensor`) | ✅ No | 5 free parameters vs 20–70+ RDC observations; problem is overdetermined |
+| **Cα chemical shift refinement only** (Phase 1) | ✅ Rarely | The shift predictor is smooth and broad; gradients are gentle |
+| **SAXS global shape refinement** | ✅ Rarely | Hundreds of q-points constrain global shape, not local torsions |
+| **Forward evaluation** — computing Q-factors, SAXS χ², etc. for fixed structures | ✅ N/A | No optimization; pure observable calculation |
+| **Small loop refinement** with harmonic restraint (`--w-restraint`) | ⚠️ Controlled | Restraint limits the effective search radius |
+| **Free backbone + sparse RDCs only** | ❌ Always | ~3× more torsional DOFs than RDC constraints per medium |
+
+**The bottom line:** `diff-biophys` is a library of *differentiable experimental observables*, designed
+to be embedded inside a larger system that supplies physical realism — whether that is a generative
+AI model, a molecular mechanics forcefield, or even a simple harmonic spring. Running gradient
+descent on a fully free backbone against a handful of RDCs will always overfit, for the same reason
+that NMR structure calculation programs (CYANA, X-PLOR) never use RDCs in isolation: the system
+is underdetermined. The benchmarks demonstrate this failure mode explicitly so users do not mistake
+a low Q-factor after optimization for genuine structural improvement.
+
 ---
 
 ### 1. `diff_biophys.geometry` (Differentiable Structural Engine)
