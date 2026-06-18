@@ -1,6 +1,6 @@
 # 🧬 DiffBiophys
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20673558.svg)](https://doi.org/10.5281/zenodo.20673558)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20735415.svg)](https://doi.org/10.5281/zenodo.20673558)
 
 Welcome to **DiffBiophys**, a high-performance Python library for **differentiable biophysical modeling**.
 
