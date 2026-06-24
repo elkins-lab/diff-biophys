@@ -27,7 +27,7 @@
 Data provided by **Roberto Tejero, RPI** from the Li et al. (2023) paper.
 Original files (in `2KZV_RDC/`): three formats for the same underlying measurements.
 
-### What was received
+### Data that was used
 
 | File | Format | Medium | Residues | Use |
 |---|---|---|---|---|
@@ -35,7 +35,6 @@ Original files (in `2KZV_RDC/`): three formats for the same underlying measureme
 | `2kzv.rdc.media1_CYANA` | CYANA | PAG | 23 | Identical values |
 | `2kzv.rdc.media2_DC` | PALES/DC | PEG | 16 | **TSV source** ✅ |
 | `2kzv.rdc.media2_CYANA` | CYANA | PEG | 16 | Identical values |
-| `2kzv.rdc.both_Xplor` | Xplor SANI | PAG+PEG | 46+42 | Not used (see below) |
 
 ### Validation summary
 
