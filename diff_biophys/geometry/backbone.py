@@ -63,7 +63,7 @@ def load_pdb_model(path: Path | str, model_id: int = 1) -> struc.AtomArray:
     """
     f = pdb_io.PDBFile.read(str(path))
     stack = f.get_structure()
-    return stack[model_id - 1]  # type: ignore[return-value]
+    return stack[model_id - 1]  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------------------
