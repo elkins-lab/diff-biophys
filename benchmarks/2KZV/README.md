@@ -43,9 +43,6 @@ Original files (in `2KZV_RDC/`): three formats for the same underlying measureme
 - **TSVs are generated from the DC files** (23 PAG + 16 PEG residues). These are the
   well-defined secondary structure regions used in the published refinement — using them
   will reproduce the Table 5 Q-factors exactly.
-- **Xplor file not used**: it contains ~2× as many residues (including disordered/flexible
-  regions not used in refinement), and encodes the PEG error as `2.418 Hz` vs. `0.418 Hz`
-  in the DC/CYANA files (same values, different convention).
 - **Residue numbers match PDB 2KZV** (chain A, active range 14–78).
 
 ### Known outlier (PEG medium)
