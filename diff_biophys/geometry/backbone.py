@@ -84,7 +84,7 @@ def get_backbone_coords(struct: struc.AtomArray) -> jnp.ndarray:
         jnp.ndarray: ``(3 × N_residues, 3)`` coordinates in Å, dtype float32.
     """
     mask = np.isin(struct.atom_name, ["N", "CA", "C"])
-    backbone = struct[mask]
+    backbone = struct[mask]  # type: ignore[index]
     order = {"N": 0, "CA": 1, "C": 2}
     sort_key = np.array([order[a] for a in backbone.atom_name])
     res_ids = backbone.res_id
