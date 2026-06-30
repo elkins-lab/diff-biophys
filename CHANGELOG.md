@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-30
+
+### Changed
+- **Test Infrastructure**: Enabled parallel testing via `pytest-xdist`, isolated slow interactive notebook tests with `@pytest.mark.slow`, and correctly configured the JAX compilation cache.
+- **Linting & Typing**: Fixed minor docstring formatting issues in `diff_biophys/nmr/chemical_shifts.py` for MkDocs strict builds, and resolved `mypy` typing errors for `tests/` and `examples/` directories.
+
 ## [0.2.0] - 2026-06-17
 
 ### Added

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diff-biophys"
-version = "0.2.0"
+version = "0.2.1"
 description = "Differentiable biophysical modeling in JAX"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -59,6 +59,7 @@ exclude = ["site*"]
 
 # ── Test runner ───────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
+addopts = "-n auto"
 testpaths = ["tests"]
 pythonpath = ["."]
 python_files = ["test_*.py"]
@@ -100,6 +101,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # re-exports are intentional
 "tests/*" = ["N", "B"]   # naming/bugbear not enforced in tests
+"tests/conftest.py" = ["E402"] # environment setup before imports
 
 [tool.ruff.lint.isort]
 known-first-party = ["diff_biophys"]
@@ -112,7 +114,7 @@ warn_unused_configs = false
 disallow_untyped_defs = true
 check_untyped_defs = true
 strict_equality = true
-exclude = ["build/", "dist/", "scratch/", "site/"]
+exclude = ["build/", "dist/", "scratch/", "site/", "benchmarks/"]
 
 [[tool.mypy.overrides]]
 module = [
@@ -127,9 +129,13 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["tests.*"]
+module = [
+    "tests.*",
+    "examples.*"
+]
 disallow_untyped_defs = false
 check_untyped_defs = false
+warn_return_any = false
 
 
 

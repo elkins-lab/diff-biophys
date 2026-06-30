@@ -13,9 +13,34 @@ Geometry conventions
 * Bond lengths and angles are taken from Engh & Huber (1991) ideal geometry.
 """
 
+import os
+import tempfile
+
+import pytest
+
+# Configure JAX compilation cache before importing jax
+os.environ.setdefault("JAX_COMPILATION_CACHE_DIR", os.path.join(tempfile.gettempdir(), "jax_cache"))
+
+
+def pytest_addoption(parser):
+    parser.addoption("--runslow", action="store_true", default=False, help="run slow tests")
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: mark test as slow to run")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--runslow"):
+        return
+    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)
+
+
 import jax.numpy as jnp
 import numpy as np
-import pytest
 
 # ---------------------------------------------------------------------------
 # Small Cartesian geometries

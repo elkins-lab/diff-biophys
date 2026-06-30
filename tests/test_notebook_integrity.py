@@ -32,6 +32,7 @@ def test_example_notebooks_are_valid_json() -> None:
             json.load(handle)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "notebook_path",
     [

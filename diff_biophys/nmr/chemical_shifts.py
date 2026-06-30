@@ -132,8 +132,7 @@ def make_ca_shift_loss(
     Returns:
         Tuple ``(loss_fn, n_matched)`` where:
 
-        * **loss_fn** ``(phi, psi) → scalar RMSD (ppm)`` — differentiable with
-          respect to both torsion arrays.
+        * **loss_fn** ``(phi, psi) → scalar RMSD (ppm)`` — differentiable with respect to both torsion arrays.
         * **n_matched** — number of residues found in both datasets.
 
     Raises:
